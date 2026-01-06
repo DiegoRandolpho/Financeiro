@@ -3,17 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Controle Financeiro React</title>
+    <title>Finance | Controle Profissional</title>
     
+    <!-- Bibliotecas Base -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Fonte Inter para um visual mais clean -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .progress-bar { transition: width 0.5s ease-in-out; }
+    </style>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        slate: { 50: '#f8fafc', 100: '#f1f5f9', 200: '#e2e8f0', 300: '#cbd5e1', 400: '#94a3b8', 500: '#64748b', 600: '#475569', 700: '#334155', 800: '#1e293b', 900: '#0f172a' },
+                        primary: { 50: '#eef2ff', 100: '#e0e7ff', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca' },
+                    }
+                }
+            }
+        }
+    </script>
 </head>
-<body class="bg-gray-100 text-gray-800 font-sans">
+<body class="bg-slate-50 text-slate-800 antialiased selection:bg-primary-100 selection:text-primary-700">
 
     <div id="root"></div>
 
@@ -21,97 +41,109 @@
         // --- CONFIGURAÇÃO ---
         const { useState, useEffect } = React;
         const { createClient } = supabase;
-
+        
         // SUAS CHAVES JÁ CONFIGURADAS
         const SUPABASE_URL = 'https://ccktnhugjrgeafmialib.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNja3RuaHVnanJnZWFmbWlhbGliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3MDYzNzUsImV4cCI6MjA4MzI4MjM3NX0.WB5OQFkFrufYcfzwJpJ7Jf2iZxcwPTpplfzDSeU_OQg';
 
-        // Inicialização do cliente
         const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // --- COMPONENTE DE LOGIN (ATUALIZADO PARA SENHA) ---
+        // --- ICONES (SVG INLINE PARA EVITAR ERROS DE CDN) ---
+        const Icons = {
+            Wallet: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>,
+            TrendingUp: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>,
+            TrendingDown: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="22 17 13.5 8.5 8.5 13.5 2 7"/><polyline points="16 17 22 17 22 11"/></svg>,
+            PiggyBank: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M19 5c-1.5 0-2.8.6-3.8 1.6l-2.1 2.2a.9.9 0 0 1-.7.3h-1.6a.9.9 0 0 1-.6-.3l-1.9-2A4.8 4.8 0 0 0 5 8.6v.1a.9.9 0 0 1-.3.7L2 11.1"/><path d="M15 15c-1.6 1.7-2.6 4-2.6 6.5a.5.5 0 0 0 .5.5h3.6a.5.5 0 0 0 .5-.5c0-1.8.6-3.4 1.7-4.8"/><path d="M19 19c-1.7-1.6-4-2.6-6.5-2.6a.5.5 0 0 0-.5.5v3.6a.5.5 0 0 0 .5.5c1.8 0 3.4-.6 4.8-1.7"/><circle cx="15.5" cy="8.5" r="2.5"/><path d="M7.5 16.5c-1.5 1.5-3.5 2.5-5.5 2.5"/></svg>,
+            LogOut: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>,
+            Plus: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M5 12h14"/><path d="M12 5v14"/></svg>,
+            Calendar: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>,
+            LayoutDashboard: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>,
+        };
+
+        // --- COMPONENTE DE UI: CARD ---
+        const Card = ({ children, className = "" }) => (
+            <div className={`bg-white rounded-xl border border-slate-200 shadow-sm ${className}`}>
+                {children}
+            </div>
+        );
+
+        // --- COMPONENTE DE UI: INPUT ---
+        const Input = (props) => (
+            <input 
+                {...props}
+                className={`w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none transition-all placeholder:text-slate-400 text-sm ${props.className || ''}`}
+            />
+        );
+
+        // --- COMPONENTE DE UI: BOTÃO ---
+        const Button = ({ children, variant = 'primary', className = "", ...props }) => {
+            const variants = {
+                primary: "bg-primary-600 hover:bg-primary-700 text-white shadow-sm hover:shadow",
+                secondary: "bg-white border border-slate-300 text-slate-700 hover:bg-slate-50",
+                danger: "bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200",
+                ghost: "text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+            };
+            return (
+                <button 
+                    {...props}
+                    className={`px-4 py-2.5 rounded-lg font-medium text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${variants[variant]} ${className}`}
+                >
+                    {children}
+                </button>
+            );
+        };
+
+        // --- TELA DE LOGIN ---
         function Auth() {
             const [email, setEmail] = useState('');
             const [password, setPassword] = useState('');
             const [loading, setLoading] = useState(false);
-            const [isSignUp, setIsSignUp] = useState(false); // Alternar entre Login e Cadastro
+            const [isSignUp, setIsSignUp] = useState(false);
 
             const handleAuth = async (e) => {
                 e.preventDefault();
                 setLoading(true);
-                
-                let result;
-                if (isSignUp) {
-                    // Tenta cadastrar
-                    result = await sb.auth.signUp({ email, password });
-                    if (!result.error && !result.data.session) {
-                        alert('Cadastro realizado! Se o login não for automático, verifique seu e-mail para confirmar a conta.');
-                    }
-                } else {
-                    // Tenta logar
-                    result = await sb.auth.signInWithPassword({ email, password });
-                }
+                let result = isSignUp 
+                    ? await sb.auth.signUp({ email, password })
+                    : await sb.auth.signInWithPassword({ email, password });
 
-                const { error } = result;
-                if (error) {
-                    alert('Erro: ' + error.message);
-                }
+                if (result.error) alert(result.error.message);
+                else if (isSignUp && !result.data.session) alert('Verifique seu e-mail para confirmar o cadastro.');
                 
                 setLoading(false);
             };
 
             return (
-                <div className="flex h-screen items-center justify-center bg-gray-100">
-                    <div className="bg-white p-8 rounded shadow-lg w-96">
-                        <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">
-                            {isSignUp ? 'Criar Nova Conta' : 'Acessar Conta'}
-                        </h2>
+                <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
+                    <Card className="w-full max-w-md p-8">
+                        <div className="text-center mb-8">
+                            <div className="w-12 h-12 bg-primary-100 text-primary-600 rounded-xl flex items-center justify-center mx-auto mb-4">
+                                <Icons.Wallet size={24} />
+                            </div>
+                            <h2 className="text-2xl font-bold text-slate-900">Finance</h2>
+                            <p className="text-slate-500 text-sm mt-1">Gerencie suas finanças com inteligência</p>
+                        </div>
                         
                         <form onSubmit={handleAuth} className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
-                                <input 
-                                    type="email" 
-                                    placeholder="seu@email.com"
-                                    className="w-full border border-gray-300 p-2 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                                    value={email} 
-                                    onChange={e => setEmail(e.target.value)} 
-                                    required
-                                />
+                                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">E-mail</label>
+                                <Input type="email" placeholder="nome@exemplo.com" value={email} onChange={e => setEmail(e.target.value)} required />
                             </div>
-                            
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Senha</label>
-                                <input 
-                                    type="password" 
-                                    placeholder="******"
-                                    className="w-full border border-gray-300 p-2 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                                    value={password} 
-                                    onChange={e => setPassword(e.target.value)} 
-                                    required
-                                />
+                                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Senha</label>
+                                <Input type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required />
                             </div>
-
-                            <button 
-                                disabled={loading} 
-                                className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700 disabled:opacity-50 transition font-medium shadow-sm"
-                            >
-                                {loading ? 'Processando...' : (isSignUp ? 'Cadastrar' : 'Entrar')}
-                            </button>
+                            <Button className="w-full mt-2" disabled={loading}>
+                                {loading ? 'Processando...' : (isSignUp ? 'Criar Conta' : 'Entrar')}
+                            </Button>
                         </form>
 
-                        <div className="mt-6 text-center border-t pt-4">
-                            <p className="text-sm text-gray-600 mb-2">
-                                {isSignUp ? 'Já tem uma conta?' : 'Ainda não tem conta?'}
-                            </p>
-                            <button 
-                                onClick={() => setIsSignUp(!isSignUp)}
-                                className="text-blue-600 font-semibold hover:underline text-sm"
-                            >
-                                {isSignUp ? 'Fazer Login' : 'Criar Cadastro'}
+                        <div className="mt-6 pt-6 border-t border-slate-100 text-center">
+                            <button onClick={() => setIsSignUp(!isSignUp)} className="text-sm text-primary-600 hover:text-primary-700 font-medium">
+                                {isSignUp ? 'Já tem conta? Fazer Login' : 'Não tem conta? Cadastre-se'}
                             </button>
                         </div>
-                    </div>
+                    </Card>
                 </div>
             );
         }
@@ -120,249 +152,379 @@
         function App() {
             const [session, setSession] = useState(null);
             const [activeTab, setActiveTab] = useState('entradas');
+            const [loading, setLoading] = useState(true);
             
-            // Dados
-            const [incomes, setIncomes] = useState([]);
-            const [fixedExpenses, setFixedExpenses] = useState([]);
-            const [budgets, setBudgets] = useState([]);
-            const [variableExpenses, setVariableExpenses] = useState([]);
-            
-            // Formulários
-            const [formIncome, setFormIncome] = useState({ description: '', amount: '', date: '' });
-            const [formFixed, setFormFixed] = useState({ description: '', amount: '', start_date: '', end_date: '' });
-            const [formBudget, setFormBudget] = useState({ name: '', total_limit: '' });
-            const [formVariable, setFormVariable] = useState({ description: '', amount: '', budget_id: '', date: '' });
+            // Dados e Formulários
+            const [data, setData] = useState({ incomes: [], fixed: [], budgets: [], variable: [] });
+            const [forms, setForms] = useState({
+                income: { description: '', amount: '', date: '' },
+                fixed: { description: '', amount: '', start_date: '', end_date: '' },
+                budget: { name: '', total_limit: '' },
+                variable: { description: '', amount: '', budget_id: '', date: '' }
+            });
 
             useEffect(() => {
-                if (!sb) return;
+                sb.auth.getSession().then(({ data: { session } }) => {
+                    setSession(session);
+                    if (session) fetchData();
+                    else setLoading(false);
+                });
 
-                sb.auth.getSession().then(({ data: { session } }) => setSession(session));
-                const { data: { subscription } } = sb.auth.onAuthStateChange((_event, session) => setSession(session));
+                const { data: { subscription } } = sb.auth.onAuthStateChange((_event, session) => {
+                    setSession(session);
+                    if (session) fetchData();
+                });
                 return () => subscription.unsubscribe();
             }, []);
 
-            useEffect(() => {
-                if (session && sb) fetchData();
-            }, [session]);
-
             const fetchData = async () => {
-                if (!sb) return;
-                const { data: inc } = await sb.from('incomes').select('*').order('date', { ascending: false });
-                const { data: fix } = await sb.from('fixed_expenses').select('*');
-                const { data: bud } = await sb.from('budgets').select('*');
-                const { data: vary } = await sb.from('variable_expenses').select('*');
+                setLoading(true);
+                const [inc, fix, bud, vary] = await Promise.all([
+                    sb.from('incomes').select('*').order('date', { ascending: false }),
+                    sb.from('fixed_expenses').select('*').order('start_date', { ascending: false }),
+                    sb.from('budgets').select('*').order('created_at', { ascending: true }),
+                    sb.from('variable_expenses').select('*').order('date', { ascending: false })
+                ]);
                 
-                if (inc) setIncomes(inc);
-                if (fix) setFixedExpenses(fix);
-                if (bud) setBudgets(bud);
-                if (vary) setVariableExpenses(vary);
+                setData({ 
+                    incomes: inc.data || [], 
+                    fixed: fix.data || [], 
+                    budgets: bud.data || [], 
+                    variable: vary.data || [] 
+                });
+                setLoading(false);
             };
 
-            // --- AÇÕES ---
-            const handleLogout = () => {
-                if (sb) sb.auth.signOut();
+            const handleLogout = () => sb.auth.signOut();
+
+            // Helpers de Form
+            const updateForm = (type, field, value) => {
+                setForms(prev => ({ ...prev, [type]: { ...prev[type], [field]: value } }));
             };
 
-            const saveIncome = async () => {
-                if (!sb || !formIncome.description || !formIncome.amount) return;
-                await sb.from('incomes').insert([{ ...formIncome, user_id: session.user.id }]);
-                setFormIncome({ description: '', amount: '', date: '' });
-                fetchData();
-            };
-
-            const saveFixed = async () => {
-                if (!sb || !formFixed.description || !formFixed.amount) return;
-                const payload = { 
-                    ...formFixed, 
-                    user_id: session.user.id, 
-                    end_date: formFixed.end_date === '' ? null : formFixed.end_date 
-                };
-                await sb.from('fixed_expenses').insert([payload]);
-                setFormFixed({ description: '', amount: '', start_date: '', end_date: '' });
-                fetchData();
-            };
-
-            const saveBudget = async () => {
-                if (!sb || !formBudget.name || !formBudget.total_limit) return;
-                await sb.from('budgets').insert([{ ...formBudget, user_id: session.user.id }]);
-                setFormBudget({ name: '', total_limit: '' });
-                fetchData();
-            };
-
-            const saveVariable = async () => {
-                if (!sb || !formVariable.description || !formVariable.amount || !formVariable.budget_id) return;
-                await sb.from('variable_expenses').insert([{ ...formVariable, user_id: session.user.id }]);
-                setFormVariable({ description: '', amount: '', budget_id: '', date: '' });
+            const submitForm = async (table, formKey, payload) => {
+                if (!session) return;
+                await sb.from(table).insert([{ ...payload, user_id: session.user.id }]);
+                // Reset form
+                const emptyForm = Object.keys(forms[formKey]).reduce((acc, key) => ({...acc, [key]: ''}), {});
+                setForms(prev => ({ ...prev, [formKey]: emptyForm }));
                 fetchData();
             };
 
             // Cálculo Orçamentos
             const getBudgetStats = (budgetId, limit) => {
-                const spent = variableExpenses
+                const spent = data.variable
                     .filter(v => v.budget_id === budgetId)
                     .reduce((acc, curr) => acc + Number(curr.amount), 0);
-                return { spent, remaining: limit - spent };
+                return { spent, remaining: limit - spent, percent: Math.min((spent / limit) * 100, 100) };
             };
 
-            if (!sb) return <div className="text-center p-10">Erro: Supabase não inicializado.</div>;
-            if (!session) return <Auth />;
+            if (!session && !loading) return <Auth />;
+            if (loading && !session) return <div className="min-h-screen flex items-center justify-center text-slate-400">Carregando...</div>;
 
             return (
-                <div className="max-w-4xl mx-auto p-4 pb-20">
-                    <div className="flex justify-between items-center mb-6 bg-white p-4 rounded shadow">
-                        <h1 className="text-xl font-bold text-gray-700">Meu Controle</h1>
-                        <button onClick={handleLogout} className="text-red-500 hover:text-red-700 text-sm font-semibold">Sair</button>
-                    </div>
-
-                    {/* NAVEGAÇÃO */}
-                    <div className="flex gap-4 mb-6 border-b pb-2 overflow-x-auto">
-                        {['entradas', 'fixos', 'orcamentos'].map(tab => (
-                            <button 
-                                key={tab}
-                                onClick={() => setActiveTab(tab)}
-                                className={`px-4 py-2 rounded capitalize font-medium transition whitespace-nowrap ${
-                                    activeTab === tab ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-                                }`}
-                            >
-                                {tab === 'orcamentos' ? 'Variáveis & Orçamentos' : tab}
-                            </button>
-                        ))}
-                    </div>
-
-                    {/* ABA: ENTRADAS */}
-                    {activeTab === 'entradas' && (
-                        <div className="space-y-6">
-                            <div className="bg-white p-4 rounded shadow space-y-4">
-                                <h3 className="font-bold text-lg">Nova Entrada</h3>
-                                <div className="flex flex-wrap gap-2">
-                                    <input placeholder="Descrição (Salário...)" className="border p-2 rounded flex-1 min-w-[150px]" value={formIncome.description} onChange={e => setFormIncome({...formIncome, description: e.target.value})} />
-                                    <input type="number" placeholder="Valor" className="border p-2 rounded w-32" value={formIncome.amount} onChange={e => setFormIncome({...formIncome, amount: e.target.value})} />
-                                    <input type="date" className="border p-2 rounded" value={formIncome.date} onChange={e => setFormIncome({...formIncome, date: e.target.value})} />
-                                    <button onClick={saveIncome} className="bg-green-600 text-white px-4 rounded font-bold hover:bg-green-700">+</button>
+                <div className="min-h-screen bg-slate-50 pb-20">
+                    {/* HEADER */}
+                    <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
+                        <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-primary-600 text-white p-1.5 rounded-lg">
+                                    <Icons.Wallet size={20} />
                                 </div>
+                                <h1 className="font-bold text-slate-800 text-lg tracking-tight">Finance</h1>
                             </div>
-                            <div className="bg-white rounded shadow overflow-x-auto">
-                                <table className="w-full text-left">
-                                    <thead className="bg-gray-50"><tr><th className="p-3">Descrição</th><th className="p-3">Data</th><th className="p-3">Valor</th></tr></thead>
-                                    <tbody className="divide-y">
-                                        {incomes.length === 0 && <tr><td colSpan="3" className="p-3 text-center text-gray-400">Nenhuma entrada cadastrada.</td></tr>}
-                                        {incomes.map(inc => (
-                                            <tr key={inc.id}>
-                                                <td className="p-3">{inc.description}</td>
-                                                <td className="p-3 text-sm text-gray-500">{inc.date}</td>
-                                                <td className="p-3 font-bold text-green-600">R$ {inc.amount}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                            <div className="flex items-center gap-4">
+                                <span className="text-xs text-slate-500 hidden sm:block">{session?.user?.email}</span>
+                                <Button variant="ghost" onClick={handleLogout} className="!p-2 text-rose-500 hover:text-rose-600 hover:bg-rose-50">
+                                    <Icons.LogOut size={18} />
+                                </Button>
                             </div>
                         </div>
-                    )}
+                    </header>
 
-                    {/* ABA: GASTOS FIXOS */}
-                    {activeTab === 'fixos' && (
-                        <div className="space-y-6">
-                            <div className="bg-white p-4 rounded shadow space-y-4">
-                                <h3 className="font-bold text-lg">Novo Gasto Fixo</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
-                                    <input placeholder="Ex: Internet" className="border p-2 rounded md:col-span-2" value={formFixed.description} onChange={e => setFormFixed({...formFixed, description: e.target.value})} />
-                                    <input type="number" placeholder="Valor" className="border p-2 rounded" value={formFixed.amount} onChange={e => setFormFixed({...formFixed, amount: e.target.value})} />
-                                    <input type="date" title="Início" className="border p-2 rounded" value={formFixed.start_date} onChange={e => setFormFixed({...formFixed, start_date: e.target.value})} />
-                                    <input type="date" title="Fim (Vazio = Ativo)" className="border p-2 rounded" value={formFixed.end_date} onChange={e => setFormFixed({...formFixed, end_date: e.target.value})} />
-                                </div>
-                                <button onClick={saveFixed} className="bg-blue-600 text-white px-4 py-2 rounded w-full font-bold hover:bg-blue-700">Cadastrar Fixo</button>
-                            </div>
-
-                            <div className="grid md:grid-cols-2 gap-4">
-                                <div className="bg-white p-4 rounded shadow border-l-4 border-red-500">
-                                    <h4 className="font-bold mb-3 text-red-700">ATIVOS (Mensais)</h4>
-                                    <ul className="space-y-2">
-                                        {fixedExpenses.filter(f => !f.end_date).length === 0 && <li className="text-gray-400 text-sm">Nenhum gasto fixo ativo.</li>}
-                                        {fixedExpenses.filter(f => !f.end_date).map(fix => (
-                                            <li key={fix.id} className="flex justify-between border-b pb-1 last:border-0">
-                                                <span>{fix.description} <small className="text-gray-400 block">Desde: {fix.start_date}</small></span>
-                                                <span className="font-bold">R$ {fix.amount}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                                <div className="bg-white p-4 rounded shadow border-l-4 border-gray-300 opacity-75">
-                                    <h4 className="font-bold mb-3 text-gray-600">ENCERRADOS</h4>
-                                    <ul className="space-y-2 text-sm">
-                                        {fixedExpenses.filter(f => f.end_date).map(fix => (
-                                            <li key={fix.id} className="flex justify-between border-b pb-1 last:border-0">
-                                                <span>{fix.description}</span>
-                                                <span>Fim: {fix.end_date}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
+                    <main className="max-w-5xl mx-auto px-4 py-8">
+                        {/* TABS DE NAVEGAÇÃO */}
+                        <div className="flex flex-col sm:flex-row gap-4 mb-8">
+                            <div className="flex p-1 bg-white border border-slate-200 rounded-xl shadow-sm w-full sm:w-auto">
+                                {[
+                                    { id: 'entradas', label: 'Entradas', icon: Icons.TrendingUp },
+                                    { id: 'fixos', label: 'Gastos Fixos', icon: Icons.Calendar },
+                                    { id: 'orcamentos', label: 'Orçamentos', icon: Icons.PiggyBank }
+                                ].map(tab => (
+                                    <button
+                                        key={tab.id}
+                                        onClick={() => setActiveTab(tab.id)}
+                                        className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                                            activeTab === tab.id 
+                                                ? 'bg-primary-50 text-primary-700 shadow-sm ring-1 ring-primary-200' 
+                                                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                                        }`}
+                                    >
+                                        <tab.icon size={16} />
+                                        {tab.label}
+                                    </button>
+                                ))}
                             </div>
                         </div>
-                    )}
 
-                    {/* ABA: ORÇAMENTOS E VARIÁVEIS */}
-                    {activeTab === 'orcamentos' && (
-                        <div className="grid md:grid-cols-2 gap-6">
+                        {/* CONTEÚDO */}
+                        <div className="animate-fade-in">
                             
-                            {/* Esquerda: Cadastro */}
-                            <div className="space-y-6">
-                                <div className="bg-purple-50 p-4 rounded border border-purple-200">
-                                    <h3 className="font-bold text-purple-800 mb-2">1. Definir Orçamento (Teto)</h3>
-                                    <div className="flex gap-2">
-                                        <input placeholder="Categoria (Ex: Mercado)" className="border p-2 rounded flex-1" value={formBudget.name} onChange={e => setFormBudget({...formBudget, name: e.target.value})} />
-                                        <input type="number" placeholder="Teto R$" className="border p-2 rounded w-24" value={formBudget.total_limit} onChange={e => setFormBudget({...formBudget, total_limit: e.target.value})} />
-                                        <button onClick={saveBudget} className="bg-purple-600 text-white px-3 rounded hover:bg-purple-700">Ok</button>
+                            {/* --- ABA ENTRADAS --- */}
+                            {activeTab === 'entradas' && (
+                                <div className="grid lg:grid-cols-3 gap-6">
+                                    <Card className="lg:col-span-1 p-6 h-fit sticky top-24">
+                                        <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                                            <Icons.Plus size={18} className="text-primary-500" /> Nova Entrada
+                                        </h3>
+                                        <div className="space-y-4">
+                                            <Input 
+                                                placeholder="Descrição (ex: Salário)" 
+                                                value={forms.income.description} 
+                                                onChange={e => updateForm('income', 'description', e.target.value)} 
+                                            />
+                                            <div className="relative">
+                                                <span className="absolute left-3 top-2.5 text-slate-400 text-sm">R$</span>
+                                                <Input 
+                                                    type="number" 
+                                                    placeholder="0,00" 
+                                                    className="pl-9"
+                                                    value={forms.income.amount} 
+                                                    onChange={e => updateForm('income', 'amount', e.target.value)} 
+                                                />
+                                            </div>
+                                            <Input 
+                                                type="date" 
+                                                value={forms.income.date} 
+                                                onChange={e => updateForm('income', 'date', e.target.value)} 
+                                            />
+                                            <Button className="w-full" onClick={() => submitForm('incomes', 'income', forms.income)}>
+                                                Adicionar Entrada
+                                            </Button>
+                                        </div>
+                                    </Card>
+
+                                    <div className="lg:col-span-2 space-y-4">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <h3 className="text-lg font-bold text-slate-800">Histórico de Entradas</h3>
+                                            <span className="text-sm text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
+                                                Total: R$ {data.incomes.reduce((a, b) => a + Number(b.amount), 0).toFixed(2)}
+                                            </span>
+                                        </div>
+                                        
+                                        {data.incomes.length === 0 ? (
+                                            <div className="text-center py-12 bg-white rounded-xl border border-dashed border-slate-300">
+                                                <div className="text-slate-400 mb-2"><Icons.LayoutDashboard size={48} className="mx-auto opacity-20" /></div>
+                                                <p className="text-slate-500">Nenhuma entrada registrada ainda.</p>
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-3">
+                                                {data.incomes.map(inc => (
+                                                    <Card key={inc.id} className="p-4 flex items-center justify-between group hover:border-primary-200 transition-colors">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                                                                <Icons.TrendingUp size={20} />
+                                                            </div>
+                                                            <div>
+                                                                <p className="font-semibold text-slate-800">{inc.description}</p>
+                                                                <p className="text-xs text-slate-500">{new Date(inc.date + 'T00:00:00').toLocaleDateString('pt-BR')}</p>
+                                                            </div>
+                                                        </div>
+                                                        <span className="font-bold text-emerald-600 tabular-nums">
+                                                            + R$ {Number(inc.amount).toFixed(2)}
+                                                        </span>
+                                                    </Card>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
+                            )}
 
-                                <div className="bg-orange-50 p-4 rounded border border-orange-200">
-                                    <h3 className="font-bold text-orange-800 mb-2">2. Lançar Gasto Variável</h3>
-                                    <select className="w-full border p-2 rounded mb-2 bg-white" value={formVariable.budget_id} onChange={e => setFormVariable({...formVariable, budget_id: e.target.value})}>
-                                        <option value="">Selecione o Orçamento...</option>
-                                        {budgets.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                                    </select>
-                                    <input placeholder="Descrição da despesa" className="w-full border p-2 rounded mb-2" value={formVariable.description} onChange={e => setFormVariable({...formVariable, description: e.target.value})} />
-                                    <div className="flex gap-2">
-                                        <input type="number" placeholder="Valor" className="border p-2 rounded flex-1" value={formVariable.amount} onChange={e => setFormVariable({...formVariable, amount: e.target.value})} />
-                                        <button onClick={saveVariable} className="bg-orange-600 text-white px-4 rounded hover:bg-orange-700">Lançar</button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Direita: Visualização */}
-                            <div className="space-y-4">
-                                <h3 className="font-bold text-gray-700">Acompanhamento</h3>
-                                {budgets.length === 0 && <p className="text-gray-400 italic">Nenhum orçamento definido.</p>}
-                                {budgets.map(b => {
-                                    const { spent, remaining } = getBudgetStats(b.id, b.total_limit);
-                                    const percent = Math.min((spent / b.total_limit) * 100, 100);
-                                    const isOver = remaining < 0;
-
-                                    return (
-                                        <div key={b.id} className="bg-white p-4 rounded shadow border border-gray-100">
-                                            <div className="flex justify-between items-end mb-2">
-                                                <span className="font-bold text-lg">{b.name}</span>
-                                                <div className="text-right text-xs text-gray-500">
-                                                    Gasto: R$ {spent} / Teto: R$ {b.total_limit}
+                            {/* --- ABA FIXOS --- */}
+                            {activeTab === 'fixos' && (
+                                <div className="space-y-6">
+                                    <Card className="p-6 bg-slate-800 text-white border-none shadow-lg bg-gradient-to-r from-slate-800 to-slate-700">
+                                        <div className="flex flex-col md:flex-row items-end gap-4">
+                                            <div className="flex-1 w-full space-y-4">
+                                                <h3 className="font-bold text-lg flex items-center gap-2 text-white">
+                                                    <Icons.Calendar size={20} className="text-primary-300" /> Cadastrar Gasto Fixo
+                                                </h3>
+                                                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                                                    <input 
+                                                        className="bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-sm text-white placeholder-slate-400 focus:ring-2 focus:ring-primary-500 outline-none md:col-span-2"
+                                                        placeholder="Descrição (ex: Aluguel)"
+                                                        value={forms.fixed.description}
+                                                        onChange={e => updateForm('fixed', 'description', e.target.value)}
+                                                    />
+                                                    <input 
+                                                        type="number" 
+                                                        className="bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-sm text-white placeholder-slate-400 focus:ring-2 focus:ring-primary-500 outline-none"
+                                                        placeholder="Valor R$"
+                                                        value={forms.fixed.amount}
+                                                        onChange={e => updateForm('fixed', 'amount', e.target.value)}
+                                                    />
+                                                    <input 
+                                                        type="date"
+                                                        className="bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-sm text-white placeholder-slate-400 focus:ring-2 focus:ring-primary-500 outline-none [color-scheme:dark]"
+                                                        value={forms.fixed.start_date}
+                                                        onChange={e => updateForm('fixed', 'start_date', e.target.value)}
+                                                    />
                                                 </div>
                                             </div>
-                                            <div className="w-full bg-gray-200 rounded-full h-3 mb-2 overflow-hidden">
-                                                <div 
-                                                    className={`h-full transition-all duration-500 ${isOver ? 'bg-red-500' : 'bg-green-500'}`} 
-                                                    style={{ width: `${percent}%` }}
-                                                ></div>
-                                            </div>
-                                            <div className={`text-right font-bold ${isOver ? 'text-red-600' : 'text-green-600'}`}>
-                                                {isOver ? `Estourou: R$ ${Math.abs(remaining)}` : `Disponível: R$ ${remaining}`}
-                                            </div>
+                                            <Button 
+                                                className="bg-white text-slate-900 hover:bg-slate-100 border-none w-full md:w-auto"
+                                                onClick={() => submitForm('fixed_expenses', 'fixed', {
+                                                    ...forms.fixed,
+                                                    end_date: forms.fixed.end_date || null
+                                                })}
+                                            >
+                                                Cadastrar
+                                            </Button>
                                         </div>
-                                    )
-                                })}
-                            </div>
+                                    </Card>
+
+                                    <div className="grid md:grid-cols-2 gap-6">
+                                        <div className="space-y-4">
+                                            <h4 className="font-bold text-slate-700 flex items-center gap-2">
+                                                <div className="w-2 h-2 rounded-full bg-rose-500"></div> Ativos (Recorrentes)
+                                            </h4>
+                                            {data.fixed.filter(f => !f.end_date).map(fix => (
+                                                <Card key={fix.id} className="p-4 flex justify-between items-center border-l-4 border-l-rose-500">
+                                                    <div>
+                                                        <p className="font-semibold text-slate-800">{fix.description}</p>
+                                                        <p className="text-xs text-slate-500">Desde: {new Date(fix.start_date + 'T00:00:00').toLocaleDateString('pt-BR')}</p>
+                                                    </div>
+                                                    <span className="font-bold text-slate-700">R$ {Number(fix.amount).toFixed(2)}</span>
+                                                </Card>
+                                            ))}
+                                        </div>
+                                        <div className="space-y-4 opacity-70 hover:opacity-100 transition-opacity">
+                                            <h4 className="font-bold text-slate-500 flex items-center gap-2">
+                                                <div className="w-2 h-2 rounded-full bg-slate-400"></div> Encerrados
+                                            </h4>
+                                            {data.fixed.filter(f => f.end_date).map(fix => (
+                                                <Card key={fix.id} className="p-4 flex justify-between items-center bg-slate-50">
+                                                    <div>
+                                                        <p className="font-medium text-slate-600">{fix.description}</p>
+                                                        <p className="text-xs text-slate-400">Fim: {new Date(fix.end_date + 'T00:00:00').toLocaleDateString('pt-BR')}</p>
+                                                    </div>
+                                                    <span className="text-sm font-medium text-slate-500 line-through">R$ {Number(fix.amount).toFixed(2)}</span>
+                                                </Card>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* --- ABA ORÇAMENTOS --- */}
+                            {activeTab === 'orcamentos' && (
+                                <div className="grid lg:grid-cols-3 gap-6">
+                                    <div className="lg:col-span-1 space-y-6">
+                                        <Card className="p-5 bg-white">
+                                            <div className="flex items-center gap-2 mb-4 text-primary-700 font-bold border-b border-primary-100 pb-2">
+                                                <Icons.PiggyBank size={20} /> 1. Criar Categoria
+                                            </div>
+                                            <div className="space-y-3">
+                                                <Input 
+                                                    placeholder="Nome (ex: Mercado)" 
+                                                    value={forms.budget.name}
+                                                    onChange={e => updateForm('budget', 'name', e.target.value)}
+                                                />
+                                                <Input 
+                                                    type="number" 
+                                                    placeholder="Limite Mensal (R$)" 
+                                                    value={forms.budget.total_limit}
+                                                    onChange={e => updateForm('budget', 'total_limit', e.target.value)}
+                                                />
+                                                <Button className="w-full" onClick={() => submitForm('budgets', 'budget', forms.budget)}>Criar Orçamento</Button>
+                                            </div>
+                                        </Card>
+
+                                        <Card className="p-5 bg-white">
+                                            <div className="flex items-center gap-2 mb-4 text-orange-700 font-bold border-b border-orange-100 pb-2">
+                                                <Icons.TrendingDown size={20} /> 2. Lançar Gasto
+                                            </div>
+                                            <div className="space-y-3">
+                                                <select 
+                                                    className="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 outline-none bg-white text-sm"
+                                                    value={forms.variable.budget_id}
+                                                    onChange={e => updateForm('variable', 'budget_id', e.target.value)}
+                                                >
+                                                    <option value="">Selecione o Orçamento...</option>
+                                                    {data.budgets.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                                                </select>
+                                                <Input 
+                                                    placeholder="Descrição da Compra" 
+                                                    value={forms.variable.description}
+                                                    onChange={e => updateForm('variable', 'description', e.target.value)}
+                                                />
+                                                <Input 
+                                                    type="number" 
+                                                    placeholder="Valor (R$)" 
+                                                    value={forms.variable.amount}
+                                                    onChange={e => updateForm('variable', 'amount', e.target.value)}
+                                                />
+                                                <Button 
+                                                    className="w-full bg-orange-600 hover:bg-orange-700 text-white" 
+                                                    onClick={() => submitForm('variable_expenses', 'variable', forms.variable)}
+                                                >
+                                                    Registrar Saída
+                                                </Button>
+                                            </div>
+                                        </Card>
+                                    </div>
+
+                                    <div className="lg:col-span-2">
+                                        <h3 className="font-bold text-slate-800 mb-4 text-lg">Acompanhamento Mensal</h3>
+                                        <div className="space-y-4">
+                                            {data.budgets.length === 0 && (
+                                                 <div className="text-center py-12 bg-white rounded-xl border border-dashed border-slate-300">
+                                                    <p className="text-slate-500">Crie seu primeiro orçamento ao lado.</p>
+                                                </div>
+                                            )}
+                                            {data.budgets.map(b => {
+                                                const { spent, remaining, percent } = getBudgetStats(b.id, b.total_limit);
+                                                const isOver = remaining < 0;
+                                                const barColor = isOver ? 'bg-rose-500' : (percent > 80 ? 'bg-orange-500' : 'bg-emerald-500');
+
+                                                return (
+                                                    <Card key={b.id} className="p-5">
+                                                        <div className="flex justify-between items-start mb-2">
+                                                            <div>
+                                                                <h4 className="font-bold text-slate-800 text-lg">{b.name}</h4>
+                                                                <p className="text-xs text-slate-500 mt-0.5">Limite: R$ {Number(b.total_limit).toFixed(2)}</p>
+                                                            </div>
+                                                            <div className="text-right">
+                                                                <span className={`block font-bold text-lg ${isOver ? 'text-rose-600' : 'text-emerald-600'}`}>
+                                                                    {isOver ? '-' : ''} R$ {Math.abs(remaining).toFixed(2)}
+                                                                </span>
+                                                                <span className="text-xs text-slate-400 font-medium uppercase tracking-wide">
+                                                                    {isOver ? 'Excedido' : 'Disponível'}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="relative h-4 w-full bg-slate-100 rounded-full overflow-hidden mt-3">
+                                                            <div 
+                                                                className={`h-full rounded-full ${barColor} progress-bar shadow-sm`}
+                                                                style={{ width: `${percent}%` }}
+                                                            ></div>
+                                                        </div>
+                                                        <div className="flex justify-between mt-2 text-xs font-medium text-slate-500">
+                                                            <span>Gasto: R$ {spent.toFixed(2)}</span>
+                                                            <span>{percent.toFixed(0)}% consumido</span>
+                                                        </div>
+                                                    </Card>
+                                                )
+                                            })}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
 
                         </div>
-                    )}
+                    </main>
                 </div>
             );
         }
