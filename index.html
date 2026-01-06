@@ -817,51 +817,6 @@
 
             const recentExpenses = expenses.slice(0, 50); 
 
-            // Form Component to reuse
-            const ExpenseForm = () => (
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label className="text-xs font-bold text-gray-500 uppercase">Valor Total</label>
-                        <div className="relative">
-                            <span className="absolute left-0 top-2 text-gray-400 font-bold">R$</span>
-                            <input type="number" step="0.01" required value={amount} onChange={e => setAmount(e.target.value)} 
-                                className="w-full pl-8 text-2xl font-bold border-b-2 border-gray-200 focus:border-accent outline-none py-1 text-gray-800 bg-transparent placeholder-gray-300" placeholder="0,00"/>
-                        </div>
-                    </div>
-                    <div>
-                        <label className="text-xs font-bold text-gray-500 uppercase">Descrição</label>
-                        <input type="text" required value={description} onChange={e => setDescription(e.target.value)} 
-                            className="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition" placeholder="Ex: Compras Supermercado"/>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="text-xs font-bold text-gray-500 uppercase">Data da Compra</label>
-                            <input type="date" required value={date} onChange={e => setDate(e.target.value)} 
-                                className="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition"/>
-                        </div>
-                        <div>
-                            <label className="text-xs font-bold text-gray-500 uppercase">Centro de Custo</label>
-                            <select required value={centerId} onChange={e => setCenterId(e.target.value)} 
-                                className="w-full border rounded-lg p-2.5 text-sm bg-white focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition">
-                                <option value="">Selecione...</option>
-                                {costCenters.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                            </select>
-                        </div>
-                    </div>
-                    <div>
-                        <label className="text-xs font-bold text-gray-500 uppercase">Parcelamento</label>
-                        <select value={installments} onChange={e => setInstallments(parseInt(e.target.value))} 
-                            className="w-full border rounded-lg p-2.5 text-sm bg-white focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition">
-                            <option value="1">À vista (1x)</option>
-                            {[2,3,4,5,6,10,12,18,24].map(n => <option key={n} value={n}>{n}x</option>)}
-                        </select>
-                    </div>
-                    <Button disabled={isSubmitting} className="w-full py-3 mt-4">
-                        {isSubmitting ? 'Salvando...' : 'Confirmar Lançamento'}
-                    </Button>
-                </form>
-            );
-
             return (
                 <div className="pb-20 md:pb-0 fade-in relative">
                     {/* Modal Gerenciador de Fixas */}
@@ -905,7 +860,48 @@
                                         <i data-lucide="settings" className="w-3 h-3"></i> Fixas
                                     </button>
                                 </div>
-                                <ExpenseForm />
+                                
+                                <form onSubmit={handleSubmit} className="space-y-4">
+                                    <div>
+                                        <label className="text-xs font-bold text-gray-500 uppercase">Valor Total</label>
+                                        <div className="relative">
+                                            <span className="absolute left-0 top-2 text-gray-400 font-bold">R$</span>
+                                            <input type="number" step="0.01" required value={amount} onChange={e => setAmount(e.target.value)} 
+                                                className="w-full pl-8 text-2xl font-bold border-b-2 border-gray-200 focus:border-accent outline-none py-1 text-gray-800 bg-transparent placeholder-gray-300" placeholder="0,00"/>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-bold text-gray-500 uppercase">Descrição</label>
+                                        <input type="text" required value={description} onChange={e => setDescription(e.target.value)} 
+                                            className="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition" placeholder="Ex: Compras Supermercado"/>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="text-xs font-bold text-gray-500 uppercase">Data da Compra</label>
+                                            <input type="date" required value={date} onChange={e => setDate(e.target.value)} 
+                                                className="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition"/>
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-bold text-gray-500 uppercase">Centro de Custo</label>
+                                            <select required value={centerId} onChange={e => setCenterId(e.target.value)} 
+                                                className="w-full border rounded-lg p-2.5 text-sm bg-white focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition">
+                                                <option value="">Selecione...</option>
+                                                {costCenters.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-bold text-gray-500 uppercase">Parcelamento</label>
+                                        <select value={installments} onChange={e => setInstallments(parseInt(e.target.value))} 
+                                            className="w-full border rounded-lg p-2.5 text-sm bg-white focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition">
+                                            <option value="1">À vista (1x)</option>
+                                            {[2,3,4,5,6,10,12,18,24].map(n => <option key={n} value={n}>{n}x</option>)}
+                                        </select>
+                                    </div>
+                                    <Button disabled={isSubmitting} className="w-full py-3 mt-4">
+                                        {isSubmitting ? 'Salvando...' : 'Confirmar Lançamento'}
+                                    </Button>
+                                </form>
                             </Card>
                         </div>
 
