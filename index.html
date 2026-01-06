@@ -22,14 +22,21 @@
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         .animate-fade-in { animation: fadeIn 0.2s ease-out; }
         .animate-slide-up { animation: slideUp 0.3s ease-out; }
+        
+        /* Custom Scrollbar para Dark Mode */
+        .dark ::-webkit-scrollbar { width: 8px; }
+        .dark ::-webkit-scrollbar-track { background: #0f172a; }
+        .dark ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        .dark ::-webkit-scrollbar-thumb:hover { background: #475569; }
     </style>
 
     <script>
         tailwind.config = {
+            darkMode: 'class', // Habilita modo escuro via classe
             theme: {
                 extend: {
                     colors: {
-                        slate: { 50: '#f8fafc', 100: '#f1f5f9', 200: '#e2e8f0', 300: '#cbd5e1', 400: '#94a3b8', 500: '#64748b', 600: '#475569', 700: '#334155', 800: '#1e293b', 900: '#0f172a' },
+                        slate: { 50: '#f8fafc', 100: '#f1f5f9', 200: '#e2e8f0', 300: '#cbd5e1', 400: '#94a3b8', 500: '#64748b', 600: '#475569', 700: '#334155', 800: '#1e293b', 850: '#172033', 900: '#0f172a', 950: '#020617' },
                         primary: { 50: '#eef2ff', 100: '#e0e7ff', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca' },
                     }
                 }
@@ -37,7 +44,7 @@
         }
     </script>
 </head>
-<body class="bg-slate-50 text-slate-800 antialiased selection:bg-primary-100 selection:text-primary-700">
+<body class="antialiased selection:bg-primary-100 selection:text-primary-700">
 
     <div id="root"></div>
 
@@ -52,7 +59,7 @@
 
         const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // --- ICONES (SVG INLINE PARA EVITAR ERROS DE CDN) ---
+        // --- ICONES (SVG INLINE) ---
         const Icons = {
             Wallet: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>,
             TrendingUp: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>,
@@ -63,11 +70,13 @@
             Calendar: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>,
             LayoutDashboard: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>,
             X: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>,
+            Sun: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>,
+            Moon: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>,
         };
 
         // --- COMPONENTE DE UI: CARD ---
         const Card = ({ children, className = "" }) => (
-            <div className={`bg-white rounded-xl border border-slate-200 shadow-sm ${className}`}>
+            <div className={`bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm dark:shadow-slate-900/50 transition-all duration-300 ${className}`}>
                 {children}
             </div>
         );
@@ -77,10 +86,10 @@
             if (!isOpen) return null;
             return (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fade-in">
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-slide-up relative">
-                        <div className="flex justify-between items-center p-4 border-b border-slate-100">
-                            <h3 className="font-bold text-slate-800">{title}</h3>
-                            <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-100 transition-colors">
+                    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-slide-up relative border dark:border-slate-700">
+                        <div className="flex justify-between items-center p-4 border-b border-slate-100 dark:border-slate-700">
+                            <h3 className="font-bold text-slate-800 dark:text-white">{title}</h3>
+                            <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-200 p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
                                 <Icons.X size={20} />
                             </button>
                         </div>
@@ -96,17 +105,27 @@
         const Input = (props) => (
             <input 
                 {...props}
-                className={`w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none transition-all placeholder:text-slate-400 text-sm ${props.className || ''}`}
+                className={`w-full px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-800 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-100 dark:focus:ring-primary-900/50 outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm ${props.className || ''}`}
             />
+        );
+
+        // --- COMPONENTE DE UI: SELECT ---
+        const Select = (props) => (
+            <select
+                {...props}
+                className={`w-full px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-800 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-100 dark:focus:ring-primary-900/50 outline-none transition-all text-sm appearance-none ${props.className || ''}`}
+            >
+                {props.children}
+            </select>
         );
 
         // --- COMPONENTE DE UI: BOTÃO ---
         const Button = ({ children, variant = 'primary', className = "", ...props }) => {
             const variants = {
-                primary: "bg-primary-600 hover:bg-primary-700 text-white shadow-sm hover:shadow",
-                secondary: "bg-white border border-slate-300 text-slate-700 hover:bg-slate-50",
-                danger: "bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200",
-                ghost: "text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+                primary: "bg-primary-600 hover:bg-primary-700 text-white shadow-sm hover:shadow dark:shadow-none",
+                secondary: "bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700",
+                danger: "bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/40 border border-rose-200 dark:border-rose-800",
+                ghost: "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
             };
             return (
                 <button 
@@ -139,23 +158,23 @@
             };
 
             return (
-                <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
+                <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4 transition-colors duration-300">
                     <Card className="w-full max-w-md p-8">
                         <div className="text-center mb-8">
-                            <div className="w-12 h-12 bg-primary-100 text-primary-600 rounded-xl flex items-center justify-center mx-auto mb-4">
+                            <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/50 text-primary-600 dark:text-primary-400 rounded-xl flex items-center justify-center mx-auto mb-4">
                                 <Icons.Wallet size={24} />
                             </div>
-                            <h2 className="text-2xl font-bold text-slate-900">Finance</h2>
-                            <p className="text-slate-500 text-sm mt-1">Gerencie suas finanças com inteligência</p>
+                            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Finance</h2>
+                            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Gerencie suas finanças com inteligência</p>
                         </div>
                         
                         <form onSubmit={handleAuth} className="space-y-4">
                             <div>
-                                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">E-mail</label>
+                                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">E-mail</label>
                                 <Input type="email" placeholder="nome@exemplo.com" value={email} onChange={e => setEmail(e.target.value)} required />
                             </div>
                             <div>
-                                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Senha</label>
+                                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">Senha</label>
                                 <Input type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required />
                             </div>
                             <Button className="w-full mt-2" disabled={loading}>
@@ -163,8 +182,8 @@
                             </Button>
                         </form>
 
-                        <div className="mt-6 pt-6 border-t border-slate-100 text-center">
-                            <button onClick={() => setIsSignUp(!isSignUp)} className="text-sm text-primary-600 hover:text-primary-700 font-medium">
+                        <div className="mt-6 pt-6 border-t border-slate-100 dark:border-slate-700 text-center">
+                            <button onClick={() => setIsSignUp(!isSignUp)} className="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 font-medium">
                                 {isSignUp ? 'Já tem conta? Fazer Login' : 'Não tem conta? Cadastre-se'}
                             </button>
                         </div>
@@ -178,6 +197,7 @@
             const [session, setSession] = useState(null);
             const [activeTab, setActiveTab] = useState('entradas');
             const [loading, setLoading] = useState(true);
+            const [darkMode, setDarkMode] = useState(false);
             
             // Estado para Modais
             const [modals, setModals] = useState({ 
@@ -195,6 +215,15 @@
                 budget: { name: '', total_limit: '' },
                 variable: { description: '', amount: '', budget_id: '', date: '' }
             });
+
+            // Efeito para Tema
+            useEffect(() => {
+                if (darkMode) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            }, [darkMode]);
 
             useEffect(() => {
                 sb.auth.getSession().then(({ data: { session } }) => {
@@ -257,346 +286,375 @@
                 return { spent, remaining: limit - spent, percent: Math.min((spent / limit) * 100, 100) };
             };
 
-            if (!session && !loading) return <Auth />;
-            if (loading && !session) return <div className="min-h-screen flex items-center justify-center text-slate-400">Carregando...</div>;
+            // Wrapper para aplicar classes do modo escuro na tela inteira se Auth for renderizado diretamente
+            if (!session && !loading) {
+                 return (
+                    <div className={darkMode ? 'dark' : ''}>
+                        <div className="absolute top-4 right-4 z-50">
+                             <button 
+                                onClick={() => setDarkMode(!darkMode)}
+                                className="p-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm"
+                            >
+                                {darkMode ? <Icons.Sun size={20} /> : <Icons.Moon size={20} />}
+                            </button>
+                        </div>
+                        <Auth />
+                    </div>
+                 );
+            }
+            
+            if (loading && !session) return <div className="min-h-screen flex items-center justify-center text-slate-400 bg-slate-50 dark:bg-slate-950">Carregando...</div>;
 
             return (
-                <div className="min-h-screen bg-slate-50 pb-20">
-                    {/* HEADER */}
-                    <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
-                        <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="bg-primary-600 text-white p-1.5 rounded-lg">
-                                    <Icons.Wallet size={20} />
-                                </div>
-                                <h1 className="font-bold text-slate-800 text-lg tracking-tight">Finance</h1>
-                            </div>
-                            <div className="flex items-center gap-4">
-                                <span className="text-xs text-slate-500 hidden sm:block">{session?.user?.email}</span>
-                                <Button variant="ghost" onClick={handleLogout} className="!p-2 text-rose-500 hover:text-rose-600 hover:bg-rose-50">
-                                    <Icons.LogOut size={18} />
-                                </Button>
-                            </div>
-                        </div>
-                    </header>
-
-                    <main className="max-w-5xl mx-auto px-4 py-8">
-                        {/* TABS DE NAVEGAÇÃO */}
-                        <div className="flex flex-col sm:flex-row gap-4 mb-8">
-                            <div className="flex p-1 bg-white border border-slate-200 rounded-xl shadow-sm w-full sm:w-auto">
-                                {[
-                                    { id: 'entradas', label: 'Entradas', icon: Icons.TrendingUp },
-                                    { id: 'fixos', label: 'Gastos Fixos', icon: Icons.Calendar },
-                                    { id: 'orcamentos', label: 'Orçamentos', icon: Icons.PiggyBank }
-                                ].map(tab => (
-                                    <button
-                                        key={tab.id}
-                                        onClick={() => setActiveTab(tab.id)}
-                                        className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                                            activeTab === tab.id 
-                                                ? 'bg-primary-50 text-primary-700 shadow-sm ring-1 ring-primary-200' 
-                                                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
-                                        }`}
-                                    >
-                                        <tab.icon size={16} />
-                                        {tab.label}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* CONTEÚDO */}
-                        <div className="animate-fade-in">
-                            
-                            {/* --- ABA ENTRADAS --- */}
-                            {activeTab === 'entradas' && (
-                                <div>
-                                    <div className="flex justify-between items-center mb-6">
-                                        <h3 className="text-lg font-bold text-slate-800">Histórico de Entradas</h3>
-                                        <div className="flex items-center gap-4">
-                                            <span className="text-sm text-slate-500 bg-white border border-slate-200 px-3 py-1.5 rounded-lg shadow-sm">
-                                                Total: <strong>R$ {data.incomes.reduce((a, b) => a + Number(b.amount), 0).toFixed(2)}</strong>
-                                            </span>
-                                            <Button onClick={() => toggleModal('income', true)}>
-                                                <Icons.Plus size={18} /> Nova Entrada
-                                            </Button>
-                                        </div>
+                <div className={darkMode ? 'dark' : ''}>
+                    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300 pb-20">
+                        {/* HEADER */}
+                        <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 transition-colors duration-300">
+                            <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="bg-primary-600 text-white p-1.5 rounded-lg">
+                                        <Icons.Wallet size={20} />
                                     </div>
+                                    <h1 className="font-bold text-slate-800 dark:text-white text-lg tracking-tight">Finance</h1>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <span className="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">{session?.user?.email}</span>
                                     
-                                    {/* Modal de Entrada */}
-                                    <Modal 
-                                        isOpen={modals.income} 
-                                        onClose={() => toggleModal('income', false)}
-                                        title="Nova Entrada"
+                                    {/* Toggle Dark Mode */}
+                                    <button 
+                                        onClick={() => setDarkMode(!darkMode)}
+                                        className="p-2 rounded-lg text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                                        title={darkMode ? "Mudar para Modo Claro" : "Mudar para Modo Escuro"}
                                     >
-                                        <div className="space-y-4">
-                                            <Input 
-                                                placeholder="Descrição (ex: Salário)" 
-                                                value={forms.income.description} 
-                                                onChange={e => updateForm('income', 'description', e.target.value)} 
-                                            />
-                                            <div className="relative">
-                                                <span className="absolute left-3 top-2.5 text-slate-400 text-sm">R$</span>
-                                                <Input 
-                                                    type="number" 
-                                                    placeholder="0,00" 
-                                                    className="pl-9"
-                                                    value={forms.income.amount} 
-                                                    onChange={e => updateForm('income', 'amount', e.target.value)} 
-                                                />
-                                            </div>
-                                            <Input 
-                                                type="date" 
-                                                value={forms.income.date} 
-                                                onChange={e => updateForm('income', 'date', e.target.value)} 
-                                            />
-                                            <Button className="w-full" onClick={() => submitForm('incomes', 'income', forms.income, 'income')}>
-                                                Adicionar Entrada
-                                            </Button>
-                                        </div>
-                                    </Modal>
+                                        {darkMode ? <Icons.Sun size={18} /> : <Icons.Moon size={18} />}
+                                    </button>
 
-                                    {/* Lista de Entradas */}
-                                    {data.incomes.length === 0 ? (
-                                        <div className="text-center py-12 bg-white rounded-xl border border-dashed border-slate-300">
-                                            <div className="text-slate-400 mb-2"><Icons.LayoutDashboard size={48} className="mx-auto opacity-20" /></div>
-                                            <p className="text-slate-500">Nenhuma entrada registrada ainda.</p>
-                                        </div>
-                                    ) : (
-                                        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                                            {data.incomes.map(inc => (
-                                                <Card key={inc.id} className="p-4 flex items-center justify-between group hover:border-primary-200 transition-colors">
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                                                            <Icons.TrendingUp size={20} />
-                                                        </div>
-                                                        <div>
-                                                            <p className="font-semibold text-slate-800">{inc.description}</p>
-                                                            <p className="text-xs text-slate-500">{new Date(inc.date + 'T00:00:00').toLocaleDateString('pt-BR')}</p>
-                                                        </div>
-                                                    </div>
-                                                    <span className="font-bold text-emerald-600 tabular-nums">
-                                                        + R$ {Number(inc.amount).toFixed(2)}
-                                                    </span>
-                                                </Card>
-                                            ))}
-                                        </div>
-                                    )}
+                                    <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 mx-1"></div>
+
+                                    <Button variant="ghost" onClick={handleLogout} className="!p-2 text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20">
+                                        <Icons.LogOut size={18} />
+                                    </Button>
                                 </div>
-                            )}
+                            </div>
+                        </header>
 
-                            {/* --- ABA FIXOS --- */}
-                            {activeTab === 'fixos' && (
-                                <div>
-                                    <div className="flex justify-between items-center mb-6">
-                                        <h3 className="text-lg font-bold text-slate-800">Gastos Fixos</h3>
-                                        <Button onClick={() => toggleModal('fixed', true)}>
-                                            <Icons.Calendar size={18} /> Cadastrar Fixo
-                                        </Button>
-                                    </div>
-
-                                    {/* Modal de Gastos Fixos */}
-                                    <Modal 
-                                        isOpen={modals.fixed} 
-                                        onClose={() => toggleModal('fixed', false)}
-                                        title="Novo Gasto Fixo"
-                                    >
-                                        <div className="space-y-4">
-                                            <Input 
-                                                placeholder="Descrição (ex: Aluguel)"
-                                                value={forms.fixed.description}
-                                                onChange={e => updateForm('fixed', 'description', e.target.value)}
-                                            />
-                                            <div className="relative">
-                                                <span className="absolute left-3 top-2.5 text-slate-400 text-sm">R$</span>
-                                                <Input 
-                                                    type="number" 
-                                                    className="pl-9"
-                                                    placeholder="0,00"
-                                                    value={forms.fixed.amount}
-                                                    onChange={e => updateForm('fixed', 'amount', e.target.value)}
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="text-xs text-slate-500 ml-1">Data Início</label>
-                                                <Input 
-                                                    type="date"
-                                                    value={forms.fixed.start_date}
-                                                    onChange={e => updateForm('fixed', 'start_date', e.target.value)}
-                                                />
-                                            </div>
-                                            <Button 
-                                                className="w-full"
-                                                onClick={() => submitForm('fixed_expenses', 'fixed', {
-                                                    ...forms.fixed,
-                                                    end_date: forms.fixed.end_date || null
-                                                }, 'fixed')}
-                                            >
-                                                Cadastrar
-                                            </Button>
-                                        </div>
-                                    </Modal>
-
-                                    <div className="grid md:grid-cols-2 gap-6">
-                                        <div className="space-y-4">
-                                            <h4 className="font-bold text-slate-700 flex items-center gap-2">
-                                                <div className="w-2 h-2 rounded-full bg-rose-500"></div> Ativos (Recorrentes)
-                                            </h4>
-                                            {data.fixed.filter(f => !f.end_date).map(fix => (
-                                                <Card key={fix.id} className="p-4 flex justify-between items-center border-l-4 border-l-rose-500">
-                                                    <div>
-                                                        <p className="font-semibold text-slate-800">{fix.description}</p>
-                                                        <p className="text-xs text-slate-500">Desde: {new Date(fix.start_date + 'T00:00:00').toLocaleDateString('pt-BR')}</p>
-                                                    </div>
-                                                    <span className="font-bold text-slate-700">R$ {Number(fix.amount).toFixed(2)}</span>
-                                                </Card>
-                                            ))}
-                                        </div>
-                                        <div className="space-y-4 opacity-70 hover:opacity-100 transition-opacity">
-                                            <h4 className="font-bold text-slate-500 flex items-center gap-2">
-                                                <div className="w-2 h-2 rounded-full bg-slate-400"></div> Encerrados
-                                            </h4>
-                                            {data.fixed.filter(f => f.end_date).map(fix => (
-                                                <Card key={fix.id} className="p-4 flex justify-between items-center bg-slate-50">
-                                                    <div>
-                                                        <p className="font-medium text-slate-600">{fix.description}</p>
-                                                        <p className="text-xs text-slate-400">Fim: {new Date(fix.end_date + 'T00:00:00').toLocaleDateString('pt-BR')}</p>
-                                                    </div>
-                                                    <span className="text-sm font-medium text-slate-500 line-through">R$ {Number(fix.amount).toFixed(2)}</span>
-                                                </Card>
-                                            ))}
-                                        </div>
-                                    </div>
+                        <main className="max-w-5xl mx-auto px-4 py-8">
+                            {/* TABS DE NAVEGAÇÃO */}
+                            <div className="flex flex-col sm:flex-row gap-4 mb-8">
+                                <div className="flex p-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm w-full sm:w-auto transition-colors duration-300">
+                                    {[
+                                        { id: 'entradas', label: 'Entradas', icon: Icons.TrendingUp },
+                                        { id: 'fixos', label: 'Gastos Fixos', icon: Icons.Calendar },
+                                        { id: 'orcamentos', label: 'Orçamentos', icon: Icons.PiggyBank }
+                                    ].map(tab => (
+                                        <button
+                                            key={tab.id}
+                                            onClick={() => setActiveTab(tab.id)}
+                                            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                                                activeTab === tab.id 
+                                                    ? 'bg-primary-50 dark:bg-slate-700 text-primary-700 dark:text-white shadow-sm ring-1 ring-primary-200 dark:ring-slate-600' 
+                                                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50'
+                                            }`}
+                                        >
+                                            <tab.icon size={16} />
+                                            {tab.label}
+                                        </button>
+                                    ))}
                                 </div>
-                            )}
+                            </div>
 
-                            {/* --- ABA ORÇAMENTOS --- */}
-                            {activeTab === 'orcamentos' && (
-                                <div>
-                                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                                        <h3 className="text-lg font-bold text-slate-800">Orçamentos & Gastos</h3>
-                                        <div className="flex gap-2 w-full sm:w-auto">
-                                            <Button variant="secondary" onClick={() => toggleModal('budget', true)} className="flex-1 sm:flex-none">
-                                                <Icons.PiggyBank size={18} /> Novo Orçamento
-                                            </Button>
-                                            <Button onClick={() => toggleModal('variable', true)} className="flex-1 sm:flex-none bg-orange-600 hover:bg-orange-700">
-                                                <Icons.TrendingDown size={18} /> Novo Gasto
-                                            </Button>
-                                        </div>
-                                    </div>
-
-                                    {/* Modal Orçamento */}
-                                    <Modal 
-                                        isOpen={modals.budget} 
-                                        onClose={() => toggleModal('budget', false)}
-                                        title="Criar Categoria de Orçamento"
-                                    >
-                                        <div className="space-y-4">
-                                            <Input 
-                                                placeholder="Nome (ex: Mercado)" 
-                                                value={forms.budget.name}
-                                                onChange={e => updateForm('budget', 'name', e.target.value)}
-                                            />
-                                            <div className="relative">
-                                                <span className="absolute left-3 top-2.5 text-slate-400 text-sm">R$</span>
-                                                <Input 
-                                                    type="number" 
-                                                    className="pl-9"
-                                                    placeholder="Limite Mensal" 
-                                                    value={forms.budget.total_limit}
-                                                    onChange={e => updateForm('budget', 'total_limit', e.target.value)}
-                                                />
+                            {/* CONTEÚDO */}
+                            <div className="animate-fade-in">
+                                
+                                {/* --- ABA ENTRADAS --- */}
+                                {activeTab === 'entradas' && (
+                                    <div>
+                                        <div className="flex justify-between items-center mb-6">
+                                            <h3 className="text-lg font-bold text-slate-800 dark:text-white">Histórico de Entradas</h3>
+                                            <div className="flex items-center gap-4">
+                                                <span className="text-sm text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-lg shadow-sm">
+                                                    Total: <strong className="text-slate-800 dark:text-slate-200">R$ {data.incomes.reduce((a, b) => a + Number(b.amount), 0).toFixed(2)}</strong>
+                                                </span>
+                                                <Button onClick={() => toggleModal('income', true)}>
+                                                    <Icons.Plus size={18} /> Nova Entrada
+                                                </Button>
                                             </div>
-                                            <Button className="w-full" onClick={() => submitForm('budgets', 'budget', forms.budget, 'budget')}>Criar Orçamento</Button>
                                         </div>
-                                    </Modal>
-
-                                    {/* Modal Gasto Variável */}
-                                    <Modal 
-                                        isOpen={modals.variable} 
-                                        onClose={() => toggleModal('variable', false)}
-                                        title="Lançar Gasto Variável"
-                                    >
-                                        <div className="space-y-4">
-                                            <select 
-                                                className="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 outline-none bg-white text-sm"
-                                                value={forms.variable.budget_id}
-                                                onChange={e => updateForm('variable', 'budget_id', e.target.value)}
-                                            >
-                                                <option value="">Selecione o Orçamento...</option>
-                                                {data.budgets.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                                            </select>
-                                            <Input 
-                                                placeholder="Descrição da Compra" 
-                                                value={forms.variable.description}
-                                                onChange={e => updateForm('variable', 'description', e.target.value)}
-                                            />
-                                            <div className="relative">
-                                                <span className="absolute left-3 top-2.5 text-slate-400 text-sm">R$</span>
+                                        
+                                        {/* Modal de Entrada */}
+                                        <Modal 
+                                            isOpen={modals.income} 
+                                            onClose={() => toggleModal('income', false)}
+                                            title="Nova Entrada"
+                                        >
+                                            <div className="space-y-4">
                                                 <Input 
-                                                    type="number" 
-                                                    className="pl-9"
-                                                    placeholder="Valor da compra" 
-                                                    value={forms.variable.amount}
-                                                    onChange={e => updateForm('variable', 'amount', e.target.value)}
+                                                    placeholder="Descrição (ex: Salário)" 
+                                                    value={forms.income.description} 
+                                                    onChange={e => updateForm('income', 'description', e.target.value)} 
                                                 />
+                                                <div className="relative">
+                                                    <span className="absolute left-3 top-2.5 text-slate-400 dark:text-slate-500 text-sm">R$</span>
+                                                    <Input 
+                                                        type="number" 
+                                                        placeholder="0,00" 
+                                                        className="pl-9"
+                                                        value={forms.income.amount} 
+                                                        onChange={e => updateForm('income', 'amount', e.target.value)} 
+                                                    />
+                                                </div>
+                                                <Input 
+                                                    type="date" 
+                                                    value={forms.income.date} 
+                                                    onChange={e => updateForm('income', 'date', e.target.value)} 
+                                                />
+                                                <Button className="w-full" onClick={() => submitForm('incomes', 'income', forms.income, 'income')}>
+                                                    Adicionar Entrada
+                                                </Button>
                                             </div>
-                                            <Button 
-                                                className="w-full bg-orange-600 hover:bg-orange-700 text-white" 
-                                                onClick={() => submitForm('variable_expenses', 'variable', forms.variable, 'variable')}
-                                            >
-                                                Registrar Saída
-                                            </Button>
-                                        </div>
-                                    </Modal>
+                                        </Modal>
 
-                                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                        {data.budgets.length === 0 && (
-                                             <div className="col-span-full text-center py-12 bg-white rounded-xl border border-dashed border-slate-300">
-                                                <p className="text-slate-500">Crie seu primeiro orçamento para começar.</p>
+                                        {/* Lista de Entradas */}
+                                        {data.incomes.length === 0 ? (
+                                            <div className="text-center py-12 bg-white dark:bg-slate-800/50 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 transition-colors duration-300">
+                                                <div className="text-slate-400 dark:text-slate-600 mb-2"><Icons.LayoutDashboard size={48} className="mx-auto opacity-50" /></div>
+                                                <p className="text-slate-500 dark:text-slate-400">Nenhuma entrada registrada ainda.</p>
+                                            </div>
+                                        ) : (
+                                            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                                {data.incomes.map(inc => (
+                                                    <Card key={inc.id} className="p-4 flex items-center justify-between group hover:border-primary-200 dark:hover:border-slate-600">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="w-10 h-10 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                                                                <Icons.TrendingUp size={20} />
+                                                            </div>
+                                                            <div>
+                                                                <p className="font-semibold text-slate-800 dark:text-slate-200">{inc.description}</p>
+                                                                <p className="text-xs text-slate-500 dark:text-slate-400">{new Date(inc.date + 'T00:00:00').toLocaleDateString('pt-BR')}</p>
+                                                            </div>
+                                                        </div>
+                                                        <span className="font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+                                                            + R$ {Number(inc.amount).toFixed(2)}
+                                                        </span>
+                                                    </Card>
+                                                ))}
                                             </div>
                                         )}
-                                        {data.budgets.map(b => {
-                                            const { spent, remaining, percent } = getBudgetStats(b.id, b.total_limit);
-                                            const isOver = remaining < 0;
-                                            const barColor = isOver ? 'bg-rose-500' : (percent > 80 ? 'bg-orange-500' : 'bg-emerald-500');
-
-                                            return (
-                                                <Card key={b.id} className="p-5">
-                                                    <div className="flex justify-between items-start mb-2">
-                                                        <div>
-                                                            <h4 className="font-bold text-slate-800 text-lg">{b.name}</h4>
-                                                            <p className="text-xs text-slate-500 mt-0.5">Limite: R$ {Number(b.total_limit).toFixed(2)}</p>
-                                                        </div>
-                                                        <div className="text-right">
-                                                            <span className={`block font-bold text-lg ${isOver ? 'text-rose-600' : 'text-emerald-600'}`}>
-                                                                {isOver ? '-' : ''} R$ {Math.abs(remaining).toFixed(2)}
-                                                            </span>
-                                                            <span className="text-xs text-slate-400 font-medium uppercase tracking-wide">
-                                                                {isOver ? 'Excedido' : 'Disponível'}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="relative h-4 w-full bg-slate-100 rounded-full overflow-hidden mt-3">
-                                                        <div 
-                                                            className={`h-full rounded-full ${barColor} progress-bar shadow-sm`}
-                                                            style={{ width: `${percent}%` }}
-                                                        ></div>
-                                                    </div>
-                                                    <div className="flex justify-between mt-2 text-xs font-medium text-slate-500">
-                                                        <span>Gasto: R$ {spent.toFixed(2)}</span>
-                                                        <span>{percent.toFixed(0)}% consumido</span>
-                                                    </div>
-                                                </Card>
-                                            )
-                                        })}
                                     </div>
-                                </div>
-                            )}
+                                )}
 
-                        </div>
-                    </main>
+                                {/* --- ABA FIXOS --- */}
+                                {activeTab === 'fixos' && (
+                                    <div>
+                                        <div className="flex justify-between items-center mb-6">
+                                            <h3 className="text-lg font-bold text-slate-800 dark:text-white">Gastos Fixos</h3>
+                                            <Button onClick={() => toggleModal('fixed', true)}>
+                                                <Icons.Calendar size={18} /> Cadastrar Fixo
+                                            </Button>
+                                        </div>
+
+                                        {/* Modal de Gastos Fixos */}
+                                        <Modal 
+                                            isOpen={modals.fixed} 
+                                            onClose={() => toggleModal('fixed', false)}
+                                            title="Novo Gasto Fixo"
+                                        >
+                                            <div className="space-y-4">
+                                                <Input 
+                                                    placeholder="Descrição (ex: Aluguel)"
+                                                    value={forms.fixed.description}
+                                                    onChange={e => updateForm('fixed', 'description', e.target.value)}
+                                                />
+                                                <div className="relative">
+                                                    <span className="absolute left-3 top-2.5 text-slate-400 dark:text-slate-500 text-sm">R$</span>
+                                                    <Input 
+                                                        type="number" 
+                                                        className="pl-9"
+                                                        placeholder="0,00"
+                                                        value={forms.fixed.amount}
+                                                        onChange={e => updateForm('fixed', 'amount', e.target.value)}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="text-xs text-slate-500 dark:text-slate-400 ml-1">Data Início</label>
+                                                    <Input 
+                                                        type="date"
+                                                        value={forms.fixed.start_date}
+                                                        onChange={e => updateForm('fixed', 'start_date', e.target.value)}
+                                                    />
+                                                </div>
+                                                <Button 
+                                                    className="w-full"
+                                                    onClick={() => submitForm('fixed_expenses', 'fixed', {
+                                                        ...forms.fixed,
+                                                        end_date: forms.fixed.end_date || null
+                                                    }, 'fixed')}
+                                                >
+                                                    Cadastrar
+                                                </Button>
+                                            </div>
+                                        </Modal>
+
+                                        <div className="grid md:grid-cols-2 gap-6">
+                                            <div className="space-y-4">
+                                                <h4 className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                                                    <div className="w-2 h-2 rounded-full bg-rose-500"></div> Ativos (Recorrentes)
+                                                </h4>
+                                                {data.fixed.filter(f => !f.end_date).map(fix => (
+                                                    <Card key={fix.id} className="p-4 flex justify-between items-center border-l-4 border-l-rose-500">
+                                                        <div>
+                                                            <p className="font-semibold text-slate-800 dark:text-slate-200">{fix.description}</p>
+                                                            <p className="text-xs text-slate-500 dark:text-slate-400">Desde: {new Date(fix.start_date + 'T00:00:00').toLocaleDateString('pt-BR')}</p>
+                                                        </div>
+                                                        <span className="font-bold text-slate-700 dark:text-slate-300">R$ {Number(fix.amount).toFixed(2)}</span>
+                                                    </Card>
+                                                ))}
+                                            </div>
+                                            <div className="space-y-4 opacity-70 hover:opacity-100 transition-opacity">
+                                                <h4 className="font-bold text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                                                    <div className="w-2 h-2 rounded-full bg-slate-400"></div> Encerrados
+                                                </h4>
+                                                {data.fixed.filter(f => f.end_date).map(fix => (
+                                                    <Card key={fix.id} className="p-4 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
+                                                        <div>
+                                                            <p className="font-medium text-slate-600 dark:text-slate-400">{fix.description}</p>
+                                                            <p className="text-xs text-slate-400 dark:text-slate-500">Fim: {new Date(fix.end_date + 'T00:00:00').toLocaleDateString('pt-BR')}</p>
+                                                        </div>
+                                                        <span className="text-sm font-medium text-slate-500 dark:text-slate-500 line-through">R$ {Number(fix.amount).toFixed(2)}</span>
+                                                    </Card>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* --- ABA ORÇAMENTOS --- */}
+                                {activeTab === 'orcamentos' && (
+                                    <div>
+                                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                                            <h3 className="text-lg font-bold text-slate-800 dark:text-white">Orçamentos & Gastos</h3>
+                                            <div className="flex gap-2 w-full sm:w-auto">
+                                                <Button variant="secondary" onClick={() => toggleModal('budget', true)} className="flex-1 sm:flex-none">
+                                                    <Icons.PiggyBank size={18} /> Novo Orçamento
+                                                </Button>
+                                                <Button onClick={() => toggleModal('variable', true)} className="flex-1 sm:flex-none bg-orange-600 hover:bg-orange-700">
+                                                    <Icons.TrendingDown size={18} /> Novo Gasto
+                                                </Button>
+                                            </div>
+                                        </div>
+
+                                        {/* Modal Orçamento */}
+                                        <Modal 
+                                            isOpen={modals.budget} 
+                                            onClose={() => toggleModal('budget', false)}
+                                            title="Criar Categoria de Orçamento"
+                                        >
+                                            <div className="space-y-4">
+                                                <Input 
+                                                    placeholder="Nome (ex: Mercado)" 
+                                                    value={forms.budget.name}
+                                                    onChange={e => updateForm('budget', 'name', e.target.value)}
+                                                />
+                                                <div className="relative">
+                                                    <span className="absolute left-3 top-2.5 text-slate-400 dark:text-slate-500 text-sm">R$</span>
+                                                    <Input 
+                                                        type="number" 
+                                                        className="pl-9"
+                                                        placeholder="Limite Mensal" 
+                                                        value={forms.budget.total_limit}
+                                                        onChange={e => updateForm('budget', 'total_limit', e.target.value)}
+                                                    />
+                                                </div>
+                                                <Button className="w-full" onClick={() => submitForm('budgets', 'budget', forms.budget, 'budget')}>Criar Orçamento</Button>
+                                            </div>
+                                        </Modal>
+
+                                        {/* Modal Gasto Variável */}
+                                        <Modal 
+                                            isOpen={modals.variable} 
+                                            onClose={() => toggleModal('variable', false)}
+                                            title="Lançar Gasto Variável"
+                                        >
+                                            <div className="space-y-4">
+                                                <Select
+                                                    value={forms.variable.budget_id}
+                                                    onChange={e => updateForm('variable', 'budget_id', e.target.value)}
+                                                >
+                                                    <option value="">Selecione o Orçamento...</option>
+                                                    {data.budgets.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                                                </Select>
+                                                <Input 
+                                                    placeholder="Descrição da Compra" 
+                                                    value={forms.variable.description}
+                                                    onChange={e => updateForm('variable', 'description', e.target.value)}
+                                                />
+                                                <div className="relative">
+                                                    <span className="absolute left-3 top-2.5 text-slate-400 dark:text-slate-500 text-sm">R$</span>
+                                                    <Input 
+                                                        type="number" 
+                                                        className="pl-9"
+                                                        placeholder="Valor da compra" 
+                                                        value={forms.variable.amount}
+                                                        onChange={e => updateForm('variable', 'amount', e.target.value)}
+                                                    />
+                                                </div>
+                                                <Button 
+                                                    className="w-full bg-orange-600 hover:bg-orange-700 text-white" 
+                                                    onClick={() => submitForm('variable_expenses', 'variable', forms.variable, 'variable')}
+                                                >
+                                                    Registrar Saída
+                                                </Button>
+                                            </div>
+                                        </Modal>
+
+                                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                            {data.budgets.length === 0 && (
+                                                 <div className="col-span-full text-center py-12 bg-white dark:bg-slate-800/50 rounded-xl border border-dashed border-slate-300 dark:border-slate-700">
+                                                    <p className="text-slate-500 dark:text-slate-400">Crie seu primeiro orçamento para começar.</p>
+                                                </div>
+                                            )}
+                                            {data.budgets.map(b => {
+                                                const { spent, remaining, percent } = getBudgetStats(b.id, b.total_limit);
+                                                const isOver = remaining < 0;
+                                                const barColor = isOver ? 'bg-rose-500' : (percent > 80 ? 'bg-orange-500' : 'bg-emerald-500');
+
+                                                return (
+                                                    <Card key={b.id} className="p-5">
+                                                        <div className="flex justify-between items-start mb-2">
+                                                            <div>
+                                                                <h4 className="font-bold text-slate-800 dark:text-white text-lg">{b.name}</h4>
+                                                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Limite: R$ {Number(b.total_limit).toFixed(2)}</p>
+                                                            </div>
+                                                            <div className="text-right">
+                                                                <span className={`block font-bold text-lg ${isOver ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                                                                    {isOver ? '-' : ''} R$ {Math.abs(remaining).toFixed(2)}
+                                                                </span>
+                                                                <span className="text-xs text-slate-400 dark:text-slate-500 font-medium uppercase tracking-wide">
+                                                                    {isOver ? 'Excedido' : 'Disponível'}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="relative h-4 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden mt-3">
+                                                            <div 
+                                                                className={`h-full rounded-full ${barColor} progress-bar shadow-sm`}
+                                                                style={{ width: `${percent}%` }}
+                                                            ></div>
+                                                        </div>
+                                                        <div className="flex justify-between mt-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+                                                            <span>Gasto: R$ {spent.toFixed(2)}</span>
+                                                            <span>{percent.toFixed(0)}% consumido</span>
+                                                        </div>
+                                                    </Card>
+                                                )
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
+
+                            </div>
+                        </main>
+                    </div>
                 </div>
             );
         }
