@@ -225,9 +225,9 @@
         // --- COMPONENTE PRINCIPAL ---
         function App() {
             const [session, setSession] = useState(null);
-            const [activeTab, setActiveTab] = useState('dashboard');
+            const [activeTab, setActiveTab] = useState('orcamentos');
             const [loading, setLoading] = useState(true);
-            const [darkMode, setDarkMode] = useState(false);
+            const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
             const [currentMonth, setCurrentMonth] = useState(new Date().toISOString().slice(0, 7)); // Formato YYYY-MM
             const [editingId, setEditingId] = useState(null);
             const [selectedBudget, setSelectedBudget] = useState(null); // Estado para o orçamento selecionado para detalhes
@@ -257,8 +257,10 @@
             useEffect(() => {
                 if (darkMode) {
                     document.documentElement.classList.add('dark');
+                    localStorage.setItem('theme', 'dark');
                 } else {
                     document.documentElement.classList.remove('dark');
+                    localStorage.setItem('theme', 'light');
                 }
             }, [darkMode]);
 
