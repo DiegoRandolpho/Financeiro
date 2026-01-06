@@ -3,224 +3,372 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Controle Financeiro Casal</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        body { font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background-color: #f4f4f9; }
-        h1 { text-align: center; color: #333; }
-        
-        /* Estilo das Abas */
-        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
-        .tab-btn { padding: 10px 20px; cursor: pointer; border: none; background: #e0e0e0; border-radius: 5px; font-weight: bold; }
-        .tab-btn.active { background: #007bff; color: white; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; animation: fadeIn 0.5s; }
-
-        /* Formulários e Listas */
-        .input-group { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
-        input, select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; flex: 1; }
-        button.add-btn { background: #28a745; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; }
-        
-        .item-list { list-style: none; padding: 0; }
-        .item-list li { background: white; border-bottom: 1px solid #eee; padding: 10px; display: flex; justify-content: space-between; align-items: center; }
-        .orcamento-card { background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; border-left: 5px solid #007bff; }
-        
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    </style>
+    <title>Controle Financeiro React</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
-<body>
+<body class="bg-gray-100 text-gray-800 font-sans">
 
-    <h1>💰 Controle Financeiro</h1>
+    <div id="root"></div>
 
-    <div class="tabs">
-        <button class="tab-btn active" onclick="openTab('receitas')">Entradas</button>
-        <button class="tab-btn" onclick="openTab('fixos')">Gastos Fixos</button>
-        <button class="tab-btn" onclick="openTab('orcamentos')">Variáveis / Orçamentos</button>
-    </div>
+    <script type="text/babel">
+        // --- CONFIGURAÇÃO ---
+        const { useState, useEffect } = React;
+        const { createClient } = supabase;
 
-    <div id="receitas" class="tab-content active">
-        <div class="input-group">
-            <select id="recTipo">
-                <option value="Salario A">Salário A</option>
-                <option value="Salario B">Salário B</option>
-                <option value="Extras">Extras</option>
-            </select>
-            <input type="text" id="recDesc" placeholder="Descrição (ex: Bônus)">
-            <input type="number" id="recValor" placeholder="Valor (R$)">
-            <button class="add-btn" onclick="addReceita()">+ Adicionar</button>
-        </div>
-        <h3>Histórico de Entradas</h3>
-        <ul id="listaReceitas" class="item-list">Carregando...</ul>
-    </div>
-
-    <div id="fixos" class="tab-content">
-        <div class="input-group">
-            <input type="text" id="fixDesc" placeholder="Descrição (ex: Aluguel)">
-            <input type="number" id="fixValor" placeholder="Valor (R$)">
-            <div style="display:flex; flex-direction:column; gap:2px; flex:1">
-                <small>Início</small>
-                <input type="date" id="fixInicio">
-            </div>
-            <div style="display:flex; flex-direction:column; gap:2px; flex:1">
-                <small>Fim (Opcional)</small>
-                <input type="date" id="fixFim">
-            </div>
-            <button class="add-btn" onclick="addFixo()">+ Salvar</button>
-        </div>
-        <h3>Contas Ativas</h3>
-        <ul id="listaFixos" class="item-list">Carregando...</ul>
-    </div>
-
-    <div id="orcamentos" class="tab-content">
-        <div class="input-group">
-            <input type="text" id="orcCat" placeholder="Categoria (ex: Mercado)">
-            <input type="number" id="orcLimite" placeholder="Limite Mensal (R$)">
-            <button class="add-btn" onclick="addOrcamento()">+ Criar Orçamento</button>
-        </div>
-        <div id="listaOrcamentos">Carregando...</div>
-    </div>
-
-    <script>
-        // --- 1. CONFIGURAÇÃO SUPABASE ---
+        // SUAS CHAVES JÁ CONFIGURADAS
         const SUPABASE_URL = 'https://ccktnhugjrgeafmialib.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNja3RuaHVnanJnZWFmbWlhbGliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3MDYzNzUsImV4cCI6MjA4MzI4MjM3NX0.WB5OQFkFrufYcfzwJpJ7Jf2iZxcwPTpplfzDSeU_OQg';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // --- 2. LÓGICA DE ABAS ---
-        function openTab(tabName) {
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(tabName).classList.add('active');
-            event.target.classList.add('active');
-            
-            // Recarregar dados ao trocar de aba
-            if(tabName === 'receitas') loadReceitas();
-            if(tabName === 'fixos') loadFixos();
-            if(tabName === 'orcamentos') loadOrcamentos();
-        }
+        // Inicialização do cliente
+        const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // --- 3. FUNÇÕES RECEITAS ---
-        async function loadReceitas() {
-            const { data, error } = await supabase.from('receitas').select('*').order('created_at', { ascending: false });
-            const lista = document.getElementById('listaReceitas');
-            lista.innerHTML = '';
-            if (data) {
-                data.forEach(r => {
-                    lista.innerHTML += `<li><strong>${r.tipo}</strong>: ${r.descricao} <span>R$ ${parseFloat(r.valor).toFixed(2)}</span></li>`;
-                });
-            }
-        }
+        // --- COMPONENTE DE LOGIN (ATUALIZADO PARA SENHA) ---
+        function Auth() {
+            const [email, setEmail] = useState('');
+            const [password, setPassword] = useState('');
+            const [loading, setLoading] = useState(false);
+            const [isSignUp, setIsSignUp] = useState(false); // Alternar entre Login e Cadastro
 
-        async function addReceita() {
-            const tipo = document.getElementById('recTipo').value;
-            const desc = document.getElementById('recDesc').value;
-            const valor = document.getElementById('recValor').value;
-
-            if (!desc || !valor) return alert("Preencha tudo!");
-
-            await supabase.from('receitas').insert([{ tipo, descricao: desc, valor }]);
-            document.getElementById('recDesc').value = '';
-            document.getElementById('recValor').value = '';
-            loadReceitas();
-        }
-
-        // --- 4. FUNÇÕES GASTOS FIXOS ---
-        async function loadFixos() {
-            const { data } = await supabase.from('gastos_fixos').select('*');
-            const lista = document.getElementById('listaFixos');
-            lista.innerHTML = '';
-            
-            if (data) {
-                const hoje = new Date();
-                data.forEach(f => {
-                    // Lógica: Se data_fim existe E já passou, não mostra (ou mostra riscado)
-                    let ativo = true;
-                    if (f.data_fim) {
-                        const fim = new Date(f.data_fim);
-                        if (fim < hoje) ativo = false;
+            const handleAuth = async (e) => {
+                e.preventDefault();
+                setLoading(true);
+                
+                let result;
+                if (isSignUp) {
+                    // Tenta cadastrar
+                    result = await sb.auth.signUp({ email, password });
+                    if (!result.error && !result.data.session) {
+                        alert('Cadastro realizado! Se o login não for automático, verifique seu e-mail para confirmar a conta.');
                     }
+                } else {
+                    // Tenta logar
+                    result = await sb.auth.signInWithPassword({ email, password });
+                }
 
-                    if (ativo) {
-                        lista.innerHTML += `
-                            <li>
-                                <div>
-                                    <strong>${f.descricao}</strong> <br>
-                                    <small>Início: ${f.data_inicio} ${f.data_fim ? '| Fim: '+f.data_fim : ''}</small>
-                                </div>
-                                <span style="color: #d9534f; font-weight: bold;">R$ ${parseFloat(f.valor).toFixed(2)}</span>
-                            </li>`;
-                    }
-                });
-            }
-        }
+                const { error } = result;
+                if (error) {
+                    alert('Erro: ' + error.message);
+                }
+                
+                setLoading(false);
+            };
 
-        async function addFixo() {
-            const descricao = document.getElementById('fixDesc').value;
-            const valor = document.getElementById('fixValor').value;
-            const inicio = document.getElementById('fixInicio').value;
-            const fim = document.getElementById('fixFim').value || null;
-
-            if (!descricao || !valor || !inicio) return alert("Preencha descrição, valor e início!");
-
-            await supabase.from('gastos_fixos').insert([{ descricao, valor, data_inicio: inicio, data_fim: fim }]);
-            // Limpar campos
-            document.getElementById('fixDesc').value = '';
-            document.getElementById('fixValor').value = '';
-            loadFixos();
-        }
-
-        // --- 5. FUNÇÕES ORÇAMENTOS ---
-        async function loadOrcamentos() {
-            const { data } = await supabase.from('orcamentos').select('*');
-            const container = document.getElementById('listaOrcamentos');
-            container.innerHTML = '';
-
-            if (data) {
-                data.forEach(o => {
-                    const gasto = parseFloat(o.valor_gasto || 0);
-                    const limite = parseFloat(o.valor_limite);
-                    const saldo = limite - gasto;
-                    const corSaldo = saldo < 0 ? 'red' : 'green';
-
-                    container.innerHTML += `
-                        <div class="orcamento-card">
-                            <div style="display:flex; justify-content:space-between;">
-                                <h3>${o.categoria}</h3>
-                                <button onclick="lancarGasto(${o.id}, ${gasto})" style="height:30px;">+ Lançar Gasto</button>
+            return (
+                <div className="flex h-screen items-center justify-center bg-gray-100">
+                    <div className="bg-white p-8 rounded shadow-lg w-96">
+                        <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">
+                            {isSignUp ? 'Criar Nova Conta' : 'Acessar Conta'}
+                        </h2>
+                        
+                        <form onSubmit={handleAuth} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
+                                <input 
+                                    type="email" 
+                                    placeholder="seu@email.com"
+                                    className="w-full border border-gray-300 p-2 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                    value={email} 
+                                    onChange={e => setEmail(e.target.value)} 
+                                    required
+                                />
                             </div>
-                            <p>Meta: R$ ${limite.toFixed(2)} | Gasto: R$ ${gasto.toFixed(2)}</p>
-                            <p style="color:${corSaldo}"><strong>Saldo Restante: R$ ${saldo.toFixed(2)}</strong></p>
-                            <progress value="${gasto}" max="${limite}" style="width:100%"></progress>
+                            
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Senha</label>
+                                <input 
+                                    type="password" 
+                                    placeholder="******"
+                                    className="w-full border border-gray-300 p-2 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                    value={password} 
+                                    onChange={e => setPassword(e.target.value)} 
+                                    required
+                                />
+                            </div>
+
+                            <button 
+                                disabled={loading} 
+                                className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700 disabled:opacity-50 transition font-medium shadow-sm"
+                            >
+                                {loading ? 'Processando...' : (isSignUp ? 'Cadastrar' : 'Entrar')}
+                            </button>
+                        </form>
+
+                        <div className="mt-6 text-center border-t pt-4">
+                            <p className="text-sm text-gray-600 mb-2">
+                                {isSignUp ? 'Já tem uma conta?' : 'Ainda não tem conta?'}
+                            </p>
+                            <button 
+                                onClick={() => setIsSignUp(!isSignUp)}
+                                className="text-blue-600 font-semibold hover:underline text-sm"
+                            >
+                                {isSignUp ? 'Fazer Login' : 'Criar Cadastro'}
+                            </button>
                         </div>
-                    `;
-                });
-            }
+                    </div>
+                </div>
+            );
         }
 
-        async function addOrcamento() {
-            const cat = document.getElementById('orcCat').value;
-            const limite = document.getElementById('orcLimite').value;
+        // --- COMPONENTE PRINCIPAL ---
+        function App() {
+            const [session, setSession] = useState(null);
+            const [activeTab, setActiveTab] = useState('entradas');
             
-            if(!cat || !limite) return alert("Preencha tudo!");
+            // Dados
+            const [incomes, setIncomes] = useState([]);
+            const [fixedExpenses, setFixedExpenses] = useState([]);
+            const [budgets, setBudgets] = useState([]);
+            const [variableExpenses, setVariableExpenses] = useState([]);
             
-            await supabase.from('orcamentos').insert([{ categoria: cat, valor_limite: limite }]);
-            document.getElementById('orcCat').value = '';
-            document.getElementById('orcLimite').value = '';
-            loadOrcamentos();
+            // Formulários
+            const [formIncome, setFormIncome] = useState({ description: '', amount: '', date: '' });
+            const [formFixed, setFormFixed] = useState({ description: '', amount: '', start_date: '', end_date: '' });
+            const [formBudget, setFormBudget] = useState({ name: '', total_limit: '' });
+            const [formVariable, setFormVariable] = useState({ description: '', amount: '', budget_id: '', date: '' });
+
+            useEffect(() => {
+                if (!sb) return;
+
+                sb.auth.getSession().then(({ data: { session } }) => setSession(session));
+                const { data: { subscription } } = sb.auth.onAuthStateChange((_event, session) => setSession(session));
+                return () => subscription.unsubscribe();
+            }, []);
+
+            useEffect(() => {
+                if (session && sb) fetchData();
+            }, [session]);
+
+            const fetchData = async () => {
+                if (!sb) return;
+                const { data: inc } = await sb.from('incomes').select('*').order('date', { ascending: false });
+                const { data: fix } = await sb.from('fixed_expenses').select('*');
+                const { data: bud } = await sb.from('budgets').select('*');
+                const { data: vary } = await sb.from('variable_expenses').select('*');
+                
+                if (inc) setIncomes(inc);
+                if (fix) setFixedExpenses(fix);
+                if (bud) setBudgets(bud);
+                if (vary) setVariableExpenses(vary);
+            };
+
+            // --- AÇÕES ---
+            const handleLogout = () => {
+                if (sb) sb.auth.signOut();
+            };
+
+            const saveIncome = async () => {
+                if (!sb || !formIncome.description || !formIncome.amount) return;
+                await sb.from('incomes').insert([{ ...formIncome, user_id: session.user.id }]);
+                setFormIncome({ description: '', amount: '', date: '' });
+                fetchData();
+            };
+
+            const saveFixed = async () => {
+                if (!sb || !formFixed.description || !formFixed.amount) return;
+                const payload = { 
+                    ...formFixed, 
+                    user_id: session.user.id, 
+                    end_date: formFixed.end_date === '' ? null : formFixed.end_date 
+                };
+                await sb.from('fixed_expenses').insert([payload]);
+                setFormFixed({ description: '', amount: '', start_date: '', end_date: '' });
+                fetchData();
+            };
+
+            const saveBudget = async () => {
+                if (!sb || !formBudget.name || !formBudget.total_limit) return;
+                await sb.from('budgets').insert([{ ...formBudget, user_id: session.user.id }]);
+                setFormBudget({ name: '', total_limit: '' });
+                fetchData();
+            };
+
+            const saveVariable = async () => {
+                if (!sb || !formVariable.description || !formVariable.amount || !formVariable.budget_id) return;
+                await sb.from('variable_expenses').insert([{ ...formVariable, user_id: session.user.id }]);
+                setFormVariable({ description: '', amount: '', budget_id: '', date: '' });
+                fetchData();
+            };
+
+            // Cálculo Orçamentos
+            const getBudgetStats = (budgetId, limit) => {
+                const spent = variableExpenses
+                    .filter(v => v.budget_id === budgetId)
+                    .reduce((acc, curr) => acc + Number(curr.amount), 0);
+                return { spent, remaining: limit - spent };
+            };
+
+            if (!sb) return <div className="text-center p-10">Erro: Supabase não inicializado.</div>;
+            if (!session) return <Auth />;
+
+            return (
+                <div className="max-w-4xl mx-auto p-4 pb-20">
+                    <div className="flex justify-between items-center mb-6 bg-white p-4 rounded shadow">
+                        <h1 className="text-xl font-bold text-gray-700">Meu Controle</h1>
+                        <button onClick={handleLogout} className="text-red-500 hover:text-red-700 text-sm font-semibold">Sair</button>
+                    </div>
+
+                    {/* NAVEGAÇÃO */}
+                    <div className="flex gap-4 mb-6 border-b pb-2 overflow-x-auto">
+                        {['entradas', 'fixos', 'orcamentos'].map(tab => (
+                            <button 
+                                key={tab}
+                                onClick={() => setActiveTab(tab)}
+                                className={`px-4 py-2 rounded capitalize font-medium transition whitespace-nowrap ${
+                                    activeTab === tab ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                                }`}
+                            >
+                                {tab === 'orcamentos' ? 'Variáveis & Orçamentos' : tab}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* ABA: ENTRADAS */}
+                    {activeTab === 'entradas' && (
+                        <div className="space-y-6">
+                            <div className="bg-white p-4 rounded shadow space-y-4">
+                                <h3 className="font-bold text-lg">Nova Entrada</h3>
+                                <div className="flex flex-wrap gap-2">
+                                    <input placeholder="Descrição (Salário...)" className="border p-2 rounded flex-1 min-w-[150px]" value={formIncome.description} onChange={e => setFormIncome({...formIncome, description: e.target.value})} />
+                                    <input type="number" placeholder="Valor" className="border p-2 rounded w-32" value={formIncome.amount} onChange={e => setFormIncome({...formIncome, amount: e.target.value})} />
+                                    <input type="date" className="border p-2 rounded" value={formIncome.date} onChange={e => setFormIncome({...formIncome, date: e.target.value})} />
+                                    <button onClick={saveIncome} className="bg-green-600 text-white px-4 rounded font-bold hover:bg-green-700">+</button>
+                                </div>
+                            </div>
+                            <div className="bg-white rounded shadow overflow-x-auto">
+                                <table className="w-full text-left">
+                                    <thead className="bg-gray-50"><tr><th className="p-3">Descrição</th><th className="p-3">Data</th><th className="p-3">Valor</th></tr></thead>
+                                    <tbody className="divide-y">
+                                        {incomes.length === 0 && <tr><td colSpan="3" className="p-3 text-center text-gray-400">Nenhuma entrada cadastrada.</td></tr>}
+                                        {incomes.map(inc => (
+                                            <tr key={inc.id}>
+                                                <td className="p-3">{inc.description}</td>
+                                                <td className="p-3 text-sm text-gray-500">{inc.date}</td>
+                                                <td className="p-3 font-bold text-green-600">R$ {inc.amount}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ABA: GASTOS FIXOS */}
+                    {activeTab === 'fixos' && (
+                        <div className="space-y-6">
+                            <div className="bg-white p-4 rounded shadow space-y-4">
+                                <h3 className="font-bold text-lg">Novo Gasto Fixo</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
+                                    <input placeholder="Ex: Internet" className="border p-2 rounded md:col-span-2" value={formFixed.description} onChange={e => setFormFixed({...formFixed, description: e.target.value})} />
+                                    <input type="number" placeholder="Valor" className="border p-2 rounded" value={formFixed.amount} onChange={e => setFormFixed({...formFixed, amount: e.target.value})} />
+                                    <input type="date" title="Início" className="border p-2 rounded" value={formFixed.start_date} onChange={e => setFormFixed({...formFixed, start_date: e.target.value})} />
+                                    <input type="date" title="Fim (Vazio = Ativo)" className="border p-2 rounded" value={formFixed.end_date} onChange={e => setFormFixed({...formFixed, end_date: e.target.value})} />
+                                </div>
+                                <button onClick={saveFixed} className="bg-blue-600 text-white px-4 py-2 rounded w-full font-bold hover:bg-blue-700">Cadastrar Fixo</button>
+                            </div>
+
+                            <div className="grid md:grid-cols-2 gap-4">
+                                <div className="bg-white p-4 rounded shadow border-l-4 border-red-500">
+                                    <h4 className="font-bold mb-3 text-red-700">ATIVOS (Mensais)</h4>
+                                    <ul className="space-y-2">
+                                        {fixedExpenses.filter(f => !f.end_date).length === 0 && <li className="text-gray-400 text-sm">Nenhum gasto fixo ativo.</li>}
+                                        {fixedExpenses.filter(f => !f.end_date).map(fix => (
+                                            <li key={fix.id} className="flex justify-between border-b pb-1 last:border-0">
+                                                <span>{fix.description} <small className="text-gray-400 block">Desde: {fix.start_date}</small></span>
+                                                <span className="font-bold">R$ {fix.amount}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                                <div className="bg-white p-4 rounded shadow border-l-4 border-gray-300 opacity-75">
+                                    <h4 className="font-bold mb-3 text-gray-600">ENCERRADOS</h4>
+                                    <ul className="space-y-2 text-sm">
+                                        {fixedExpenses.filter(f => f.end_date).map(fix => (
+                                            <li key={fix.id} className="flex justify-between border-b pb-1 last:border-0">
+                                                <span>{fix.description}</span>
+                                                <span>Fim: {fix.end_date}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ABA: ORÇAMENTOS E VARIÁVEIS */}
+                    {activeTab === 'orcamentos' && (
+                        <div className="grid md:grid-cols-2 gap-6">
+                            
+                            {/* Esquerda: Cadastro */}
+                            <div className="space-y-6">
+                                <div className="bg-purple-50 p-4 rounded border border-purple-200">
+                                    <h3 className="font-bold text-purple-800 mb-2">1. Definir Orçamento (Teto)</h3>
+                                    <div className="flex gap-2">
+                                        <input placeholder="Categoria (Ex: Mercado)" className="border p-2 rounded flex-1" value={formBudget.name} onChange={e => setFormBudget({...formBudget, name: e.target.value})} />
+                                        <input type="number" placeholder="Teto R$" className="border p-2 rounded w-24" value={formBudget.total_limit} onChange={e => setFormBudget({...formBudget, total_limit: e.target.value})} />
+                                        <button onClick={saveBudget} className="bg-purple-600 text-white px-3 rounded hover:bg-purple-700">Ok</button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-orange-50 p-4 rounded border border-orange-200">
+                                    <h3 className="font-bold text-orange-800 mb-2">2. Lançar Gasto Variável</h3>
+                                    <select className="w-full border p-2 rounded mb-2 bg-white" value={formVariable.budget_id} onChange={e => setFormVariable({...formVariable, budget_id: e.target.value})}>
+                                        <option value="">Selecione o Orçamento...</option>
+                                        {budgets.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                                    </select>
+                                    <input placeholder="Descrição da despesa" className="w-full border p-2 rounded mb-2" value={formVariable.description} onChange={e => setFormVariable({...formVariable, description: e.target.value})} />
+                                    <div className="flex gap-2">
+                                        <input type="number" placeholder="Valor" className="border p-2 rounded flex-1" value={formVariable.amount} onChange={e => setFormVariable({...formVariable, amount: e.target.value})} />
+                                        <button onClick={saveVariable} className="bg-orange-600 text-white px-4 rounded hover:bg-orange-700">Lançar</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Direita: Visualização */}
+                            <div className="space-y-4">
+                                <h3 className="font-bold text-gray-700">Acompanhamento</h3>
+                                {budgets.length === 0 && <p className="text-gray-400 italic">Nenhum orçamento definido.</p>}
+                                {budgets.map(b => {
+                                    const { spent, remaining } = getBudgetStats(b.id, b.total_limit);
+                                    const percent = Math.min((spent / b.total_limit) * 100, 100);
+                                    const isOver = remaining < 0;
+
+                                    return (
+                                        <div key={b.id} className="bg-white p-4 rounded shadow border border-gray-100">
+                                            <div className="flex justify-between items-end mb-2">
+                                                <span className="font-bold text-lg">{b.name}</span>
+                                                <div className="text-right text-xs text-gray-500">
+                                                    Gasto: R$ {spent} / Teto: R$ {b.total_limit}
+                                                </div>
+                                            </div>
+                                            <div className="w-full bg-gray-200 rounded-full h-3 mb-2 overflow-hidden">
+                                                <div 
+                                                    className={`h-full transition-all duration-500 ${isOver ? 'bg-red-500' : 'bg-green-500'}`} 
+                                                    style={{ width: `${percent}%` }}
+                                                ></div>
+                                            </div>
+                                            <div className={`text-right font-bold ${isOver ? 'text-red-600' : 'text-green-600'}`}>
+                                                {isOver ? `Estourou: R$ ${Math.abs(remaining)}` : `Disponível: R$ ${remaining}`}
+                                            </div>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+
+                        </div>
+                    )}
+                </div>
+            );
         }
 
-        async function lancarGasto(id, valorAtual) {
-            const novoGasto = prompt("Quanto você gastou agora?");
-            if (novoGasto) {
-                const total = parseFloat(valorAtual) + parseFloat(novoGasto);
-                await supabase.from('orcamentos').update({ valor_gasto: total }).eq('id', id);
-                loadOrcamentos();
-            }
-        }
-
-        // Inicializar na primeira aba
-        loadReceitas();
-
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
     </script>
 </body>
 </html>
