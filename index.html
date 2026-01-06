@@ -249,7 +249,6 @@
             const menuItems = [
                 { id: 'dashboard', label: 'Visão Geral', icon: 'pie-chart' },
                 { id: 'expenses', label: 'Lançamentos', icon: 'list' },
-                { id: 'recurrence', label: 'Contas Fixas', icon: 'calendar' },
                 { id: 'costcenters', label: 'Centros de Custo', icon: 'wallet' },
             ];
 
@@ -468,194 +467,7 @@
             );
         };
 
-        // --- LANÇAMENTOS (ADD & LIST) ---
-        const ExpensesScreen = ({ costCenters, onAddExpense, expenses, user }) => {
-            const [amount, setAmount] = useState('');
-            const [description, setDescription] = useState('');
-            const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-            const [centerId, setCenterId] = useState('');
-            const [installments, setInstallments] = useState(1);
-            const [isSubmitting, setIsSubmitting] = useState(false);
-            const [showForm, setShowForm] = useState(false);
-
-            const handleSubmit = async (e) => {
-                e.preventDefault();
-                setIsSubmitting(true);
-                const baseDate = new Date(date);
-                const promises = [];
-                const valPerInstallment = parseFloat(amount) / installments;
-
-                for (let i = 0; i < installments; i++) {
-                    const instDate = new Date(baseDate);
-                    instDate.setMonth(baseDate.getMonth() + i);
-                    promises.push(supabase.from('expenses').insert({
-                        description: installments > 1 ? `${description} (${i+1}/${installments})` : description,
-                        amount: valPerInstallment,
-                        date: instDate.toISOString().split('T')[0],
-                        cost_center_id: centerId,
-                        user_email: user.email,
-                        installment_current: i + 1,
-                        installment_total: installments
-                    }));
-                }
-                await Promise.all(promises);
-                await onAddExpense(); 
-                setIsSubmitting(false);
-                setShowForm(false);
-                setAmount('');
-                setDescription('');
-                setInstallments(1);
-            };
-
-            const recentExpenses = expenses.slice(0, 50); 
-
-            // Form Component to reuse
-            const ExpenseForm = () => (
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label className="text-xs font-bold text-gray-500 uppercase">Valor Total</label>
-                        <div className="relative">
-                            <span className="absolute left-0 top-2 text-gray-400 font-bold">R$</span>
-                            <input type="number" step="0.01" required value={amount} onChange={e => setAmount(e.target.value)} 
-                                className="w-full pl-8 text-2xl font-bold border-b-2 border-gray-200 focus:border-accent outline-none py-1 text-gray-800 bg-transparent placeholder-gray-300" placeholder="0,00"/>
-                        </div>
-                    </div>
-                    <div>
-                        <label className="text-xs font-bold text-gray-500 uppercase">Descrição</label>
-                        <input type="text" required value={description} onChange={e => setDescription(e.target.value)} 
-                            className="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition" placeholder="Ex: Compras Supermercado"/>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="text-xs font-bold text-gray-500 uppercase">Data da Compra</label>
-                            <input type="date" required value={date} onChange={e => setDate(e.target.value)} 
-                                className="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition"/>
-                        </div>
-                        <div>
-                            <label className="text-xs font-bold text-gray-500 uppercase">Centro de Custo</label>
-                            <select required value={centerId} onChange={e => setCenterId(e.target.value)} 
-                                className="w-full border rounded-lg p-2.5 text-sm bg-white focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition">
-                                <option value="">Selecione...</option>
-                                {costCenters.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                            </select>
-                        </div>
-                    </div>
-                    <div>
-                        <label className="text-xs font-bold text-gray-500 uppercase">Parcelamento</label>
-                        <select value={installments} onChange={e => setInstallments(parseInt(e.target.value))} 
-                            className="w-full border rounded-lg p-2.5 text-sm bg-white focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition">
-                            <option value="1">À vista (1x)</option>
-                            {[2,3,4,5,6,10,12,18,24].map(n => <option key={n} value={n}>{n}x</option>)}
-                        </select>
-                    </div>
-                    <Button disabled={isSubmitting} className="w-full py-3 mt-4">
-                        {isSubmitting ? 'Salvando...' : 'Confirmar Lançamento'}
-                    </Button>
-                </form>
-            );
-
-            return (
-                <div className="pb-20 md:pb-0 fade-in grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Header Mobile */}
-                    <div className="lg:hidden flex justify-between items-center mb-4">
-                        <h2 className="text-xl font-bold text-gray-800">Lançamentos</h2>
-                        <Button onClick={() => setShowForm(!showForm)} variant="accent" className="rounded-full w-10 h-10 p-0 flex items-center justify-center">
-                            <i data-lucide={showForm ? "minus" : "plus"}></i>
-                        </Button>
-                    </div>
-
-                    {/* Left Column: Form (Always visible on Desktop, Toggle on Mobile) */}
-                    <div className={`lg:col-span-1 ${showForm ? 'block' : 'hidden lg:block'}`}>
-                        <Card className="p-6 sticky top-6">
-                            <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
-                                <i data-lucide="plus-circle" className="w-5 h-5 text-accent"></i> Novo Gasto
-                            </h3>
-                            <ExpenseForm />
-                        </Card>
-                    </div>
-
-                    {/* Right Column: List */}
-                    <div className="lg:col-span-2 space-y-4">
-                         <div className="hidden lg:flex justify-between items-center mb-2">
-                            <h2 className="text-xl font-bold text-gray-800">Histórico Recente</h2>
-                             <span className="text-sm text-gray-500">{recentExpenses.length} registros exibidos</span>
-                        </div>
-
-                        {/* Desktop Table View */}
-                        <div className="hidden md:block bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                            <table className="w-full text-left text-sm text-gray-600">
-                                <thead className="bg-gray-50 text-xs uppercase font-bold text-gray-500">
-                                    <tr>
-                                        <th className="px-6 py-4">Data</th>
-                                        <th className="px-6 py-4">Descrição</th>
-                                        <th className="px-6 py-4">Categoria</th>
-                                        <th className="px-6 py-4">Usuário</th>
-                                        <th className="px-6 py-4 text-right">Valor</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-100">
-                                    {recentExpenses.map(expense => {
-                                        const center = costCenters.find(c => c.id === expense.cost_center_id) || { color: '#ccc', name: '-' };
-                                        return (
-                                            <tr key={expense.id} className="hover:bg-gray-50 transition-colors">
-                                                <td className="px-6 py-4 whitespace-nowrap">{formatDate(expense.date)}</td>
-                                                <td className="px-6 py-4 font-medium text-gray-900">{expense.description}</td>
-                                                <td className="px-6 py-4">
-                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" style={{backgroundColor: center.color + '20', color: center.color}}>
-                                                        {center.name}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4 text-xs">{expense.user_email.split('@')[0]}</td>
-                                                <td className="px-6 py-4 text-right font-bold text-gray-800">
-                                                    {formatMoney(expense.amount)}
-                                                    {expense.installment_total > 1 && (
-                                                        <span className="ml-2 text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full">
-                                                            {expense.installment_current}/{expense.installment_total}
-                                                        </span>
-                                                    )}
-                                                </td>
-                                            </tr>
-                                        )
-                                    })}
-                                </tbody>
-                            </table>
-                             {recentExpenses.length === 0 && <p className="text-center py-8 text-gray-400">Nenhum registro encontrado.</p>}
-                        </div>
-
-                        {/* Mobile Card View */}
-                        <div className="md:hidden space-y-3">
-                            {recentExpenses.length === 0 && <p className="text-center py-8 text-gray-400">Nenhum registro.</p>}
-                            {recentExpenses.map(expense => {
-                                const center = costCenters.find(c => c.id === expense.cost_center_id) || { color: '#ccc', name: 'Desconhecido' };
-                                return (
-                                    <div key={expense.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between relative overflow-hidden">
-                                        <div className="absolute left-0 top-0 bottom-0 w-1.5" style={{backgroundColor: center.color}}></div>
-                                        <div className="flex-1 min-w-0 pl-3">
-                                            <p className="font-bold text-gray-800 truncate">{expense.description}</p>
-                                            <div className="flex text-xs text-gray-500 gap-2 mt-1">
-                                                <span>{formatDate(expense.date)}</span>
-                                                <span>•</span>
-                                                <span className="truncate max-w-[100px]">{center.name}</span>
-                                            </div>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="font-bold text-gray-800 text-lg">{formatMoney(expense.amount)}</p>
-                                            {expense.installment_total > 1 && (
-                                                <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">
-                                                    {expense.installment_current}/{expense.installment_total}
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                </div>
-            );
-        };
-
-        // --- CENTROS DE CUSTO (CONFIG) ---
+        // --- COMPONENT: COST CENTERS SCREEN (Definição REINSERIDA) ---
         const CostCentersScreen = ({ costCenters, onUpdate }) => {
             const [editing, setEditing] = useState(null);
             const [form, setForm] = useState({ name: '', budget: '', color: '#3b82f6' });
@@ -734,7 +546,7 @@
                                         </div>
                                     </div>
                                     <div className="absolute top-2 right-2 opacity-10 pointer-events-none">
-                                        <i data-lucide="tag" className="w-12 h-12"></i>
+                                        <i data-lucide="tag" className="w-12 h-12" style={{color: cc.color}}></i>
                                     </div>
                                 </Card>
                             ))}
@@ -744,10 +556,11 @@
             );
         };
 
-        // --- CONTAS RECORRENTES ---
-        const RecurrenceScreen = ({ costCenters, onUpdate, user }) => {
+        // --- SUB-COMPONENT: GERENCIADOR DE FIXAS (RecurrenceManager) ---
+        const RecurrenceManager = ({ costCenters, onUpdate, user, onClose, expenses }) => {
             const [recurrences, setRecurrences] = useState([]);
-            const [form, setForm] = useState({ description: '', amount: '', cost_center_id: '', day_of_charge: 10 });
+            const [form, setForm] = useState({ description: '', amount: '', cost_center_id: '', day_of_charge: 10, valid_until: '' });
+            const [isProcessing, setIsProcessing] = useState(false);
             
             const fetchRecurrences = async () => {
                 const { data } = await supabase.from('recurrences').select('*').order('created_at');
@@ -758,9 +571,57 @@
 
             const handleAdd = async (e) => {
                 e.preventDefault();
-                await supabase.from('recurrences').insert(form);
-                setForm({ description: '', amount: '', cost_center_id: '', day_of_charge: 10 });
-                fetchRecurrences();
+                setIsProcessing(true);
+                
+                // 1. Criar a Recorrência no Banco (para referência)
+                const { data: recData, error } = await supabase.from('recurrences').insert({
+                    description: form.description,
+                    amount: form.amount,
+                    cost_center_id: form.cost_center_id,
+                    day_of_charge: form.day_of_charge,
+                    active: true
+                }).select();
+
+                if (error) {
+                    alert("Erro ao criar: " + error.message);
+                    setIsProcessing(false);
+                    return;
+                }
+
+                // 2. Se tiver Data Final, gerar todas as despesas futuras (Mass Generation)
+                if (form.valid_until) {
+                    const endDate = new Date(form.valid_until);
+                    let currentDate = new Date();
+                    // Ajusta para o dia de cobrança do mês atual
+                    currentDate.setDate(form.day_of_charge);
+                    
+                    const bulkExpenses = [];
+                    while (currentDate <= endDate) {
+                        bulkExpenses.push({
+                            description: `[Fixo] ${form.description}`,
+                            amount: form.amount,
+                            date: currentDate.toISOString().split('T')[0],
+                            cost_center_id: form.cost_center_id,
+                            user_email: user.email,
+                            type: 'fixo',
+                            is_recurrence: true
+                        });
+                        // Avança 1 mês
+                        currentDate.setMonth(currentDate.getMonth() + 1);
+                    }
+
+                    if (bulkExpenses.length > 0) {
+                        const confirmGen = confirm(`Deseja gerar automaticamente ${bulkExpenses.length} lançamentos até ${formatDate(form.valid_until)}?`);
+                        if (confirmGen) {
+                            await supabase.from('expenses').insert(bulkExpenses);
+                        }
+                    }
+                }
+
+                setForm({ description: '', amount: '', cost_center_id: '', day_of_charge: 10, valid_until: '' });
+                await fetchRecurrences();
+                onUpdate(); // Atualiza a lista principal de gastos
+                setIsProcessing(false);
             };
 
             const toggleActive = async (id, currentVal) => {
@@ -768,14 +629,36 @@
                 fetchRecurrences();
             };
 
-            const generateExpenses = async () => {
+            const processCurrentMonth = async () => {
                 const today = new Date();
-                const monthStr = today.toISOString().slice(0, 7); 
-                const confirmed = confirm(`Gerar despesas fixas para este mês (${monthStr})?`);
+                
+                const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString();
+                const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString();
+                
+                const { data: existingExpenses } = await supabase.from('expenses')
+                    .select('description, amount')
+                    .gte('date', startOfMonth)
+                    .lte('date', endOfMonth)
+                    .eq('is_recurrence', true);
+
+                const existingSignatures = existingExpenses.map(e => e.description);
+
+                const toCreate = recurrences.filter(r => r.active).filter(r => {
+                    const expectedDesc = `[Fixo] ${r.description}`;
+                    return !existingSignatures.includes(expectedDesc);
+                });
+
+                if (toCreate.length === 0) {
+                    alert("Todas as contas fixas ativas já foram lançadas neste mês!");
+                    return;
+                }
+
+                const confirmed = confirm(`Deseja lançar ${toCreate.length} contas pendentes para este mês?`);
                 if (!confirmed) return;
-                const updates = recurrences.filter(r => r.active).map(r => {
+
+                const updates = toCreate.map(r => {
                     const chargeDate = new Date(today.getFullYear(), today.getMonth(), r.day_of_charge || 10);
-                    return supabase.from('expenses').insert({
+                    return {
                         description: `[Fixo] ${r.description}`,
                         amount: r.amount,
                         date: chargeDate.toISOString().split('T')[0],
@@ -783,68 +666,325 @@
                         user_email: user.email,
                         type: 'fixo',
                         is_recurrence: true
-                    });
+                    };
                 });
-                await Promise.all(updates);
-                alert("Despesas geradas com sucesso!");
-                onUpdate(); 
+
+                await supabase.from('expenses').insert(updates);
+                alert("Processamento concluído!");
+                onUpdate();
             };
 
             return (
-                <div className="pb-20 space-y-6 fade-in">
-                    <div className="flex justify-between items-center">
-                        <h2 className="text-xl font-bold text-gray-800">Contas Fixas Mensais</h2>
-                        <Button onClick={generateExpenses} variant="accent" className="text-xs px-3 py-1">
-                            <i data-lucide="play-circle" className="w-4 h-4"></i> Lançar no Mês Atual
-                        </Button>
+                <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 backdrop-blur-sm fade-in">
+                    <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-white flex flex-col">
+                        <div className="p-6 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-10">
+                            <div>
+                                <h2 className="text-xl font-bold text-gray-800">Gerenciador de Contas Fixas</h2>
+                                <p className="text-sm text-gray-500">Configure despesas que se repetem todo mês</p>
+                            </div>
+                            <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full">
+                                <i data-lucide="x" className="w-6 h-6 text-gray-500"></i>
+                            </button>
+                        </div>
+
+                        <div className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            <div className="lg:col-span-1 space-y-6">
+                                <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                                    <h3 className="font-bold text-blue-800 mb-2 flex items-center gap-2">
+                                        <i data-lucide="plus-circle" className="w-4 h-4"></i> Nova Fixa
+                                    </h3>
+                                    <form onSubmit={handleAdd} className="space-y-3">
+                                        <input placeholder="Descrição (Ex: Aluguel)" required value={form.description} onChange={e => setForm({...form, description: e.target.value})} 
+                                            className="w-full border border-blue-200 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none"/>
+                                        
+                                        <div className="flex gap-2">
+                                            <input placeholder="Valor" type="number" step="0.01" required value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} 
+                                                className="flex-1 border border-blue-200 rounded-lg p-2.5 text-sm"/>
+                                            <input placeholder="Dia" type="number" max="31" min="1" required value={form.day_of_charge} onChange={e => setForm({...form, day_of_charge: e.target.value})} 
+                                                className="w-20 border border-blue-200 rounded-lg p-2.5 text-sm" title="Dia do Vencimento"/>
+                                        </div>
+
+                                        <select required value={form.cost_center_id} onChange={e => setForm({...form, cost_center_id: e.target.value})} 
+                                            className="w-full border border-blue-200 rounded-lg p-2.5 text-sm bg-white">
+                                            <option value="">Centro de Custo...</option>
+                                            {costCenters.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                        </select>
+
+                                        <div>
+                                            <label className="text-xs font-bold text-blue-600 uppercase mb-1 block">Data Final (Opcional)</label>
+                                            <input type="date" value={form.valid_until} onChange={e => setForm({...form, valid_until: e.target.value})} 
+                                                className="w-full border border-blue-200 rounded-lg p-2.5 text-sm text-gray-600"/>
+                                            <p className="text-[10px] text-blue-400 mt-1 leading-tight">
+                                                Se preencher, gera <strong>todos</strong> os lançamentos futuros até esta data agora.
+                                            </p>
+                                        </div>
+
+                                        <Button disabled={isProcessing} className="w-full mt-2" variant="accent">
+                                            {isProcessing ? 'Salvando...' : 'Adicionar'}
+                                        </Button>
+                                    </form>
+                                </div>
+
+                                <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 text-center">
+                                    <h4 className="font-bold text-gray-700 text-sm mb-2">Ações Rápidas</h4>
+                                    <Button onClick={processCurrentMonth} variant="secondary" className="w-full text-xs">
+                                        <i data-lucide="refresh-cw" className="w-4 h-4"></i> Processar Mês Atual
+                                    </Button>
+                                    <p className="text-[10px] text-gray-400 mt-2">
+                                        Verifica e lança apenas o que ainda não foi lançado este mês.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="lg:col-span-2 space-y-3 max-h-[500px] overflow-y-auto pr-2">
+                                <h3 className="font-bold text-gray-600 text-sm uppercase tracking-wide mb-2">Contas Cadastradas</h3>
+                                {recurrences.length === 0 && <p className="text-gray-400 text-center py-10">Nenhuma conta fixa configurada.</p>}
+                                {recurrences.map(r => {
+                                     const center = costCenters.find(c => c.id === r.cost_center_id) || { color: '#ccc', name: '-' };
+                                     return (
+                                        <div key={r.id} className={`bg-white border border-gray-100 p-4 rounded-xl flex items-center justify-between shadow-sm ${!r.active && 'opacity-60 bg-gray-50'}`}>
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-12 h-12 rounded-lg bg-gray-100 flex flex-col items-center justify-center text-gray-600 font-bold border border-gray-200">
+                                                    <span className="text-xs uppercase text-gray-400">Dia</span>
+                                                    <span className="text-lg leading-none">{r.day_of_charge}</span>
+                                                </div>
+                                                <div>
+                                                    <div className="flex items-center gap-2">
+                                                        <p className="font-bold text-gray-800">{r.description}</p>
+                                                        <span className="text-[10px] px-2 py-0.5 rounded-full" style={{backgroundColor: center.color + '20', color: center.color}}>
+                                                            {center.name}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-sm text-gray-500 font-medium">{formatMoney(r.amount)} / mês</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-4">
+                                                <button onClick={() => toggleActive(r.id, r.active)} 
+                                                    className={`w-12 h-6 rounded-full flex items-center p-1 transition-colors duration-300 ${r.active ? 'bg-green-500' : 'bg-gray-300'}`}>
+                                                    <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${r.active ? 'translate-x-6' : ''}`}></div>
+                                                </button>
+                                            </div>
+                                        </div>
+                                     );
+                                })}
+                            </div>
+                        </div>
+                    </Card>
+                </div>
+            );
+        };
+
+        // --- LANÇAMENTOS (ADD & LIST) ---
+        const ExpensesScreen = ({ costCenters, onAddExpense, expenses, user }) => {
+            const [amount, setAmount] = useState('');
+            const [description, setDescription] = useState('');
+            const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+            const [centerId, setCenterId] = useState('');
+            const [installments, setInstallments] = useState(1);
+            const [isSubmitting, setIsSubmitting] = useState(false);
+            const [showForm, setShowForm] = useState(false);
+            
+            const [showRecurrenceManager, setShowRecurrenceManager] = useState(false);
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setIsSubmitting(true);
+                const baseDate = new Date(date);
+                const promises = [];
+                const valPerInstallment = parseFloat(amount) / installments;
+
+                for (let i = 0; i < installments; i++) {
+                    const instDate = new Date(baseDate);
+                    instDate.setMonth(baseDate.getMonth() + i);
+                    promises.push(supabase.from('expenses').insert({
+                        description: installments > 1 ? `${description} (${i+1}/${installments})` : description,
+                        amount: valPerInstallment,
+                        date: instDate.toISOString().split('T')[0],
+                        cost_center_id: centerId,
+                        user_email: user.email,
+                        installment_current: i + 1,
+                        installment_total: installments
+                    }));
+                }
+                await Promise.all(promises);
+                await onAddExpense(); 
+                setIsSubmitting(false);
+                setShowForm(false);
+                setAmount('');
+                setDescription('');
+                setInstallments(1);
+            };
+
+            const recentExpenses = expenses.slice(0, 50); 
+
+            // Form Component to reuse
+            const ExpenseForm = () => (
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                        <label className="text-xs font-bold text-gray-500 uppercase">Valor Total</label>
+                        <div className="relative">
+                            <span className="absolute left-0 top-2 text-gray-400 font-bold">R$</span>
+                            <input type="number" step="0.01" required value={amount} onChange={e => setAmount(e.target.value)} 
+                                className="w-full pl-8 text-2xl font-bold border-b-2 border-gray-200 focus:border-accent outline-none py-1 text-gray-800 bg-transparent placeholder-gray-300" placeholder="0,00"/>
+                        </div>
                     </div>
+                    <div>
+                        <label className="text-xs font-bold text-gray-500 uppercase">Descrição</label>
+                        <input type="text" required value={description} onChange={e => setDescription(e.target.value)} 
+                            className="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition" placeholder="Ex: Compras Supermercado"/>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="text-xs font-bold text-gray-500 uppercase">Data da Compra</label>
+                            <input type="date" required value={date} onChange={e => setDate(e.target.value)} 
+                                className="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition"/>
+                        </div>
+                        <div>
+                            <label className="text-xs font-bold text-gray-500 uppercase">Centro de Custo</label>
+                            <select required value={centerId} onChange={e => setCenterId(e.target.value)} 
+                                className="w-full border rounded-lg p-2.5 text-sm bg-white focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition">
+                                <option value="">Selecione...</option>
+                                {costCenters.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label className="text-xs font-bold text-gray-500 uppercase">Parcelamento</label>
+                        <select value={installments} onChange={e => setInstallments(parseInt(e.target.value))} 
+                            className="w-full border rounded-lg p-2.5 text-sm bg-white focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition">
+                            <option value="1">À vista (1x)</option>
+                            {[2,3,4,5,6,10,12,18,24].map(n => <option key={n} value={n}>{n}x</option>)}
+                        </select>
+                    </div>
+                    <Button disabled={isSubmitting} className="w-full py-3 mt-4">
+                        {isSubmitting ? 'Salvando...' : 'Confirmar Lançamento'}
+                    </Button>
+                </form>
+            );
+
+            return (
+                <div className="pb-20 md:pb-0 fade-in relative">
+                    {/* Modal Gerenciador de Fixas */}
+                    {showRecurrenceManager && (
+                        <RecurrenceManager 
+                            costCenters={costCenters} 
+                            user={user} 
+                            onUpdate={onAddExpense}
+                            onClose={() => setShowRecurrenceManager(false)} 
+                            expenses={expenses}
+                        />
+                    )}
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        <div className="lg:col-span-1">
-                             <Card className="p-6 sticky top-6">
-                                <h3 className="text-sm font-bold text-gray-500 mb-4 uppercase tracking-wide border-b pb-2">Nova Recorrência</h3>
-                                <form onSubmit={handleAdd} className="space-y-4">
-                                    <input placeholder="Descrição (Ex: Aluguel)" required value={form.description} onChange={e => setForm({...form, description: e.target.value})} 
-                                        className="w-full border rounded-lg p-2.5 text-sm"/>
-                                    <div className="flex gap-3">
-                                        <input placeholder="Valor" type="number" required value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} 
-                                            className="flex-1 border rounded-lg p-2.5 text-sm"/>
-                                        <input placeholder="Dia" type="number" max="31" min="1" required value={form.day_of_charge} onChange={e => setForm({...form, day_of_charge: e.target.value})} 
-                                            className="w-20 border rounded-lg p-2.5 text-sm" title="Dia do vencimento"/>
-                                    </div>
-                                    <select required value={form.cost_center_id} onChange={e => setForm({...form, cost_center_id: e.target.value})} 
-                                        className="w-full border rounded-lg p-2.5 text-sm bg-white">
-                                        <option value="">Centro de Custo...</option>
-                                        {costCenters.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                                    </select>
-                                    <Button className="w-full">Adicionar</Button>
-                                </form>
+                        {/* Header Mobile + Botão Fixas */}
+                        <div className="lg:hidden flex justify-between items-center mb-4 col-span-1">
+                            <h2 className="text-xl font-bold text-gray-800">Lançamentos</h2>
+                            <div className="flex gap-2">
+                                <Button onClick={() => setShowRecurrenceManager(true)} variant="secondary" className="rounded-full w-10 h-10 p-0 flex items-center justify-center text-gray-600">
+                                    <i data-lucide="clock" className="w-5 h-5"></i>
+                                </Button>
+                                <Button onClick={() => setShowForm(!showForm)} variant="accent" className="rounded-full w-10 h-10 p-0 flex items-center justify-center">
+                                    <i data-lucide={showForm ? "minus" : "plus"}></i>
+                                </Button>
+                            </div>
+                        </div>
+
+                        {/* Left Column: Form (Always visible on Desktop, Toggle on Mobile) */}
+                        <div className={`lg:col-span-1 ${showForm ? 'block' : 'hidden lg:block'}`}>
+                            <Card className="p-6 sticky top-6">
+                                <div className="flex justify-between items-center mb-6">
+                                    <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                                        <i data-lucide="plus-circle" className="w-5 h-5 text-accent"></i> Novo Gasto
+                                    </h3>
+                                    {/* Desktop Recurrence Button inside Card Header */}
+                                    <button 
+                                        onClick={() => setShowRecurrenceManager(true)}
+                                        className="hidden lg:flex items-center gap-1 text-xs font-bold text-gray-500 hover:text-accent bg-gray-50 hover:bg-blue-50 px-3 py-1.5 rounded-full transition-colors"
+                                        title="Gerenciar Contas Fixas"
+                                    >
+                                        <i data-lucide="settings" className="w-3 h-3"></i> Fixas
+                                    </button>
+                                </div>
+                                <ExpenseForm />
                             </Card>
                         </div>
 
-                        <div className="lg:col-span-2 space-y-3">
-                            {recurrences.map(r => (
-                                <Card key={r.id} className={`p-4 flex items-center justify-between transition-all ${!r.active && 'opacity-60 bg-gray-50'}`}>
-                                    <div className="flex items-center gap-4">
-                                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold ${r.active ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-200 text-gray-400'}`}>
-                                            {r.day_of_charge}
+                        {/* Right Column: List */}
+                        <div className="lg:col-span-2 space-y-4">
+                             <div className="hidden lg:flex justify-between items-center mb-2">
+                                <h2 className="text-xl font-bold text-gray-800">Histórico Recente</h2>
+                                 <span className="text-sm text-gray-500">{recentExpenses.length} registros exibidos</span>
+                            </div>
+
+                            {/* Desktop Table View */}
+                            <div className="hidden md:block bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                                <table className="w-full text-left text-sm text-gray-600">
+                                    <thead className="bg-gray-50 text-xs uppercase font-bold text-gray-500">
+                                        <tr>
+                                            <th className="px-6 py-4">Data</th>
+                                            <th className="px-6 py-4">Descrição</th>
+                                            <th className="px-6 py-4">Categoria</th>
+                                            <th className="px-6 py-4">Usuário</th>
+                                            <th className="px-6 py-4 text-right">Valor</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100">
+                                        {recentExpenses.map(expense => {
+                                            const center = costCenters.find(c => c.id === expense.cost_center_id) || { color: '#ccc', name: '-' };
+                                            return (
+                                                <tr key={expense.id} className="hover:bg-gray-50 transition-colors">
+                                                    <td className="px-6 py-4 whitespace-nowrap">{formatDate(expense.date)}</td>
+                                                    <td className="px-6 py-4 font-medium text-gray-900">{expense.description}</td>
+                                                    <td className="px-6 py-4">
+                                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" style={{backgroundColor: center.color + '20', color: center.color}}>
+                                                            {center.name}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-xs">{expense.user_email.split('@')[0]}</td>
+                                                    <td className="px-6 py-4 text-right font-bold text-gray-800">
+                                                        {formatMoney(expense.amount)}
+                                                        {expense.installment_total > 1 && (
+                                                            <span className="ml-2 text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full">
+                                                                {expense.installment_current}/{expense.installment_total}
+                                                            </span>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            )
+                                        })}
+                                    </tbody>
+                                </table>
+                                 {recentExpenses.length === 0 && <p className="text-center py-8 text-gray-400">Nenhum registro encontrado.</p>}
+                            </div>
+
+                            {/* Mobile Card View */}
+                            <div className="md:hidden space-y-3">
+                                {recentExpenses.length === 0 && <p className="text-center py-8 text-gray-400">Nenhum registro.</p>}
+                                {recentExpenses.map(expense => {
+                                    const center = costCenters.find(c => c.id === expense.cost_center_id) || { color: '#ccc', name: 'Desconhecido' };
+                                    return (
+                                        <div key={expense.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between relative overflow-hidden">
+                                            <div className="absolute left-0 top-0 bottom-0 w-1.5" style={{backgroundColor: center.color}}></div>
+                                            <div className="flex-1 min-w-0 pl-3">
+                                                <p className="font-bold text-gray-800 truncate">{expense.description}</p>
+                                                <div className="flex text-xs text-gray-500 gap-2 mt-1">
+                                                    <span>{formatDate(expense.date)}</span>
+                                                    <span>•</span>
+                                                    <span className="truncate max-w-[100px]">{center.name}</span>
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="font-bold text-gray-800 text-lg">{formatMoney(expense.amount)}</p>
+                                                {expense.installment_total > 1 && (
+                                                    <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">
+                                                        {expense.installment_current}/{expense.installment_total}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p className="font-bold text-gray-800">{r.description}</p>
-                                            <p className="text-sm text-gray-500">{formatMoney(r.amount)}</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <span className={`text-xs font-bold uppercase mr-2 ${r.active ? 'text-green-600' : 'text-gray-400'}`}>
-                                            {r.active ? 'Ativo' : 'Pausado'}
-                                        </span>
-                                        <button onClick={() => toggleActive(r.id, r.active)} 
-                                            className={`w-12 h-6 rounded-full flex items-center p-1 transition-colors duration-300 ${r.active ? 'bg-green-500' : 'bg-gray-300'}`}>
-                                            <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${r.active ? 'translate-x-6' : ''}`}></div>
-                                        </button>
-                                    </div>
-                                </Card>
-                            ))}
+                                    );
+                                })}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -915,7 +1055,6 @@
                                 {view === 'dashboard' && <Dashboard user={session.user} costCenters={costCenters} expenses={expenses} currentMonthRef={currentMonthRef} onChangeMonth={setCurrentMonthRef} />}
                                 {view === 'expenses' && <ExpensesScreen user={session.user} costCenters={costCenters} expenses={expenses} onAddExpense={loadData} />}
                                 {view === 'costcenters' && <CostCentersScreen costCenters={costCenters} onUpdate={loadData} />}
-                                {view === 'recurrence' && <RecurrenceScreen user={session.user} costCenters={costCenters} onUpdate={loadData} />}
                             </div>
                         </div>
 
@@ -934,10 +1073,6 @@
                                     <i data-lucide="plus" className="w-8 h-8"></i>
                                 </button>
                             </div>
-                            <button onClick={() => setView('recurrence')} className={`flex flex-col items-center ${view === 'recurrence' ? 'text-primary' : 'text-gray-400'}`}>
-                                <i data-lucide="calendar" className="w-6 h-6"></i>
-                                <span className="text-[10px] mt-1">Fixas</span>
-                            </button>
                             <button onClick={() => setView('costcenters')} className={`flex flex-col items-center ${view === 'costcenters' ? 'text-primary' : 'text-gray-400'}`}>
                                 <i data-lucide="wallet" className="w-6 h-6"></i>
                                 <span className="text-[10px] mt-1">Centros</span>
