@@ -3,1084 +3,224 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Finanças Familiar</title>
-    
-    <!-- React & ReactDOM -->
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    
-    <!-- Babel para JSX -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Supabase JS (Versão UMD via UNPKG para maior estabilidade) -->
-    <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-    
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-
-    <!-- Tailwind Config para cores personalizadas -->
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#0f172a',
-                        secondary: '#334155',
-                        accent: '#3b82f6',
-                        surface: '#ffffff',
-                        background: '#f1f5f9'
-                    }
-                }
-            }
-        }
-    </script>
-
+    <title>Controle Financeiro Casal</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* Estilos globais e resets */
-        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
-        .card-shadow { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
-        /* Scrollbar hide for cleaner UI */
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        body { font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background-color: #f4f4f9; }
+        h1 { text-align: center; color: #333; }
         
-        /* Animações suaves */
-        .fade-in { animation: fadeIn 0.3s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* Estilo das Abas */
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
+        .tab-btn { padding: 10px 20px; cursor: pointer; border: none; background: #e0e0e0; border-radius: 5px; font-weight: bold; }
+        .tab-btn.active { background: #007bff; color: white; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.5s; }
+
+        /* Formulários e Listas */
+        .input-group { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+        input, select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; flex: 1; }
+        button.add-btn { background: #28a745; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; }
+        
+        .item-list { list-style: none; padding: 0; }
+        .item-list li { background: white; border-bottom: 1px solid #eee; padding: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .orcamento-card { background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; border-left: 5px solid #007bff; }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body>
-    <div id="root"></div>
 
-    <script type="text/babel">
-        // ==========================================
-        // CONFIGURAÇÃO DO SUPABASE
-        // ==========================================
-        
-        // Chaves fornecidas
-        const SUPABASE_URL = "https://ccktnhugjrgeafmialib.supabase.co"; 
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNja3RuaHVnanJnZWFmbWlhbGliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3MDYzNzUsImV4cCI6MjA4MzI4MjM3NX0.WB5OQFkFrufYcfzwJpJ7Jf2iZxcwPTpplfzDSeU_OQg";
-        
-        let supabaseClient = null; // Variável para o cliente inicializado
-        let initError = null;
+    <h1>💰 Controle Financeiro</h1>
 
-        try {
-            // 1. Tenta localizar a biblioteca globalmente (suporta variações de CDN: minúsculo ou maiúsculo)
-            const sbLib = window.supabase || window.Supabase;
+    <div class="tabs">
+        <button class="tab-btn active" onclick="openTab('receitas')">Entradas</button>
+        <button class="tab-btn" onclick="openTab('fixos')">Gastos Fixos</button>
+        <button class="tab-btn" onclick="openTab('orcamentos')">Variáveis / Orçamentos</button>
+    </div>
 
-            if (!sbLib || !sbLib.createClient) {
-                throw new Error("A biblioteca do Supabase não foi encontrada no objeto window. Verifique o script CDN.");
-            }
+    <div id="receitas" class="tab-content active">
+        <div class="input-group">
+            <select id="recTipo">
+                <option value="Salario A">Salário A</option>
+                <option value="Salario B">Salário B</option>
+                <option value="Extras">Extras</option>
+            </select>
+            <input type="text" id="recDesc" placeholder="Descrição (ex: Bônus)">
+            <input type="number" id="recValor" placeholder="Valor (R$)">
+            <button class="add-btn" onclick="addReceita()">+ Adicionar</button>
+        </div>
+        <h3>Histórico de Entradas</h3>
+        <ul id="listaReceitas" class="item-list">Carregando...</ul>
+    </div>
 
-            // 2. Limpeza e Validação
-            const cleanUrl = SUPABASE_URL ? SUPABASE_URL.trim() : "";
-            const cleanKey = SUPABASE_KEY ? SUPABASE_KEY.trim() : "";
+    <div id="fixos" class="tab-content">
+        <div class="input-group">
+            <input type="text" id="fixDesc" placeholder="Descrição (ex: Aluguel)">
+            <input type="number" id="fixValor" placeholder="Valor (R$)">
+            <div style="display:flex; flex-direction:column; gap:2px; flex:1">
+                <small>Início</small>
+                <input type="date" id="fixInicio">
+            </div>
+            <div style="display:flex; flex-direction:column; gap:2px; flex:1">
+                <small>Fim (Opcional)</small>
+                <input type="date" id="fixFim">
+            </div>
+            <button class="add-btn" onclick="addFixo()">+ Salvar</button>
+        </div>
+        <h3>Contas Ativas</h3>
+        <ul id="listaFixos" class="item-list">Carregando...</ul>
+    </div>
 
-            if (cleanUrl && cleanUrl.startsWith("http")) {
-                // 3. Inicialização
-                supabaseClient = sbLib.createClient(cleanUrl, cleanKey);
-            } else {
-                initError = "A URL do Supabase parece inválida ou está vazia.";
-            }
-        } catch (error) {
-            console.error("Erro crítico ao inicializar Supabase:", error);
-            initError = error.message;
+    <div id="orcamentos" class="tab-content">
+        <div class="input-group">
+            <input type="text" id="orcCat" placeholder="Categoria (ex: Mercado)">
+            <input type="number" id="orcLimite" placeholder="Limite Mensal (R$)">
+            <button class="add-btn" onclick="addOrcamento()">+ Criar Orçamento</button>
+        </div>
+        <div id="listaOrcamentos">Carregando...</div>
+    </div>
+
+    <script>
+        // --- 1. CONFIGURAÇÃO SUPABASE ---
+        const SUPABASE_URL = 'https://ccktnhugjrgeafmialib.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNja3RuaHVnanJnZWFmbWlhbGliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3MDYzNzUsImV4cCI6MjA4MzI4MjM3NX0.WB5OQFkFrufYcfzwJpJ7Jf2iZxcwPTpplfzDSeU_OQg';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // --- 2. LÓGICA DE ABAS ---
+        function openTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+            
+            // Recarregar dados ao trocar de aba
+            if(tabName === 'receitas') loadReceitas();
+            if(tabName === 'fixos') loadFixos();
+            if(tabName === 'orcamentos') loadOrcamentos();
         }
 
-        // Atalho para usar nos componentes
-        const supabase = supabaseClient; 
-
-        const { useState, useEffect, useMemo } = React;
-
-        // ==========================================
-        // UTILITÁRIOS
-        // ==========================================
-        
-        const formatMoney = (val) => {
-            return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
-        };
-
-        const formatDate = (dateStr) => {
-            if(!dateStr) return '';
-            const [year, month, day] = dateStr.split('-');
-            return `${day}/${month}/${year}`;
-        };
-
-        // Regra do Cartão: Vira dia 06.
-        const getReferenceDate = (dateStr) => {
-            const date = new Date(dateStr + 'T12:00:00');
-            const day = date.getDate();
-            const month = date.getMonth(); 
-            const year = date.getFullYear();
-
-            // Se for dia 1 a 6, pertence à fatura do mês anterior
-            if (day <= 6) {
-                return new Date(year, month - 1, 1);
+        // --- 3. FUNÇÕES RECEITAS ---
+        async function loadReceitas() {
+            const { data, error } = await supabase.from('receitas').select('*').order('created_at', { ascending: false });
+            const lista = document.getElementById('listaReceitas');
+            lista.innerHTML = '';
+            if (data) {
+                data.forEach(r => {
+                    lista.innerHTML += `<li><strong>${r.tipo}</strong>: ${r.descricao} <span>R$ ${parseFloat(r.valor).toFixed(2)}</span></li>`;
+                });
             }
-            // Se for dia 7 em diante, pertence à fatura deste mês
-            return new Date(year, month, 1);
-        };
+        }
 
-        const getMonthName = (date) => {
-            return date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-        };
+        async function addReceita() {
+            const tipo = document.getElementById('recTipo').value;
+            const desc = document.getElementById('recDesc').value;
+            const valor = document.getElementById('recValor').value;
 
-        // ==========================================
-        // COMPONENTES DE UI
-        // ==========================================
+            if (!desc || !valor) return alert("Preencha tudo!");
 
-        const Card = ({ children, className = "" }) => (
-            <div className={`bg-white rounded-xl shadow-sm border border-slate-100 ${className}`}>
-                {children}
-            </div>
-        );
+            await supabase.from('receitas').insert([{ tipo, descricao: desc, valor }]);
+            document.getElementById('recDesc').value = '';
+            document.getElementById('recValor').value = '';
+            loadReceitas();
+        }
 
-        const Button = ({ children, onClick, variant = 'primary', className = "", disabled=false }) => {
-            const baseClass = "px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2";
-            const variants = {
-                primary: "bg-primary text-white hover:bg-slate-800 shadow-md hover:shadow-lg",
-                secondary: "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50",
-                accent: "bg-accent text-white hover:bg-blue-600 shadow-md",
-                ghost: "text-gray-500 hover:bg-gray-100 hover:text-gray-700"
-            };
-            return (
-                <button disabled={disabled} onClick={onClick} className={`${baseClass} ${variants[variant]} ${className} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                    {children}
-                </button>
-            );
-        };
-
-        // --- TELA DE AVISO DE CONFIGURAÇÃO ---
-        const SetupScreen = ({ error }) => (
-            <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
-                <Card className="p-8 w-full max-w-md text-center">
-                    <div className="mb-4 flex justify-center text-red-500">
-                        <i data-lucide="alert-triangle" className="w-12 h-12"></i>
-                    </div>
-                    <h1 className="text-2xl font-bold text-gray-800 mb-2">Erro de Inicialização</h1>
-                    <div className="bg-red-50 text-left p-4 rounded-lg text-sm text-red-800 space-y-2 mb-6 border border-red-200">
-                        <p><strong>Detalhe do Erro:</strong></p>
-                        <p className="font-mono text-xs break-all">{error || "Desconhecido"}</p>
-                    </div>
-                    <Button onClick={() => window.location.reload()}>Recarregar Página</Button>
-                </Card>
-            </div>
-        );
-
-        // --- TELA DE LOGIN ---
-        const LoginScreen = ({ onLogin }) => {
-            const [email, setEmail] = useState('');
-            const [password, setPassword] = useState('');
-            const [loading, setLoading] = useState(false);
-            const [error, setError] = useState('');
-            const [mode, setMode] = useState('login');
-
-            const handleAuth = async (e) => {
-                e.preventDefault();
-                setLoading(true);
-                setError('');
-                try {
-                    let result;
-                    if (mode === 'signup') {
-                        result = await supabase.auth.signUp({ email, password });
-                    } else {
-                        result = await supabase.auth.signInWithPassword({ email, password });
-                    }
-
-                    if (result.error) {
-                        setError(result.error.message);
-                    } else {
-                        if (mode === 'signup') {
-                            if (result.data?.user && !result.data.session) {
-                                alert("Conta criada! Verifique seu email para confirmar o cadastro.");
-                            } else {
-                                alert("Conta criada e logada!");
-                            }
-                        }
-                    }
-                } catch (err) {
-                    setError("Erro de conexão. Verifique sua internet.");
-                }
-                setLoading(false);
-            };
-
-            return (
-                <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
-                    <Card className="p-8 w-full max-w-md">
-                        <div className="text-center mb-8">
-                            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 text-primary mb-4">
-                                <i data-lucide="wallet" className="w-6 h-6"></i>
-                            </div>
-                            <h1 className="text-2xl font-bold text-primary">Finanças Familiar</h1>
-                            <p className="text-gray-500 text-sm mt-2">Controle orçamentário inteligente</p>
-                        </div>
-
-                        {error && <div className="bg-red-50 text-red-600 p-3 rounded-lg mb-4 text-sm border border-red-100">{error}</div>}
-                        
-                        <form onSubmit={handleAuth} className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                                <input required type="email" value={email} onChange={e => setEmail(e.target.value)} 
-                                    className="w-full rounded-lg border-gray-300 border p-2.5 shadow-sm focus:border-accent focus:ring-accent transition"/>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Senha</label>
-                                <input required type="password" value={password} onChange={e => setPassword(e.target.value)} 
-                                    className="w-full rounded-lg border-gray-300 border p-2.5 shadow-sm focus:border-accent focus:ring-accent transition"/>
-                            </div>
-                            <Button disabled={loading} className="w-full">
-                                {loading ? 'Processando...' : (mode === 'login' ? 'Entrar' : 'Criar Conta')}
-                            </Button>
-                        </form>
-                        <div className="mt-6 text-center">
-                            <button onClick={() => setMode(mode === 'login' ? 'signup' : 'login')} className="text-sm text-accent hover:text-blue-700 font-medium transition">
-                                {mode === 'login' ? 'Não tem conta? Cadastre-se' : 'Já tem conta? Entrar'}
-                            </button>
-                        </div>
-                    </Card>
-                </div>
-            );
-        };
-
-        // --- SIDEBAR (DESKTOP) ---
-        const Sidebar = ({ view, setView, handleLogout, user }) => {
-            const menuItems = [
-                { id: 'dashboard', label: 'Visão Geral', icon: 'pie-chart' },
-                { id: 'expenses', label: 'Lançamentos', icon: 'list' },
-                { id: 'costcenters', label: 'Centros de Custo', icon: 'wallet' },
-            ];
-
-            return (
-                <aside className="hidden md:flex flex-col w-64 bg-white border-r border-gray-200 h-screen fixed left-0 top-0 z-50">
-                    <div className="p-6 border-b border-gray-100 flex items-center gap-3">
-                        <div className="bg-primary text-white p-2 rounded-lg">
-                            <i data-lucide="wallet" className="w-5 h-5"></i>
-                        </div>
-                        <span className="font-bold text-gray-800 text-lg">Finanças</span>
-                    </div>
-                    
-                    <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-                        {menuItems.map(item => (
-                            <button 
-                                key={item.id}
-                                onClick={() => setView(item.id)}
-                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                                    view === item.id 
-                                    ? 'bg-blue-50 text-accent' 
-                                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                                }`}
-                            >
-                                <i data-lucide={item.icon} className="w-5 h-5"></i>
-                                {item.label}
-                            </button>
-                        ))}
-                    </nav>
-
-                    <div className="p-4 border-t border-gray-100">
-                        <div className="flex items-center gap-3 mb-4 px-2">
-                            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-600">
-                                <i data-lucide="user" className="w-4 h-4"></i>
-                            </div>
-                            <div className="overflow-hidden">
-                                <p className="text-sm font-medium text-gray-700 truncate">{user?.email.split('@')[0]}</p>
-                                <p className="text-xs text-gray-400">Logado</p>
-                            </div>
-                        </div>
-                        <button onClick={handleLogout} className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                            <i data-lucide="log-out" className="w-4 h-4"></i>
-                            Sair do Sistema
-                        </button>
-                    </div>
-                </aside>
-            );
-        };
-
-        // --- DASHBOARD (HOME) ---
-        const Dashboard = ({ user, costCenters, expenses, currentMonthRef, onChangeMonth }) => {
-            const monthlyExpenses = useMemo(() => {
-                return expenses.filter(e => {
-                    const refDate = getReferenceDate(e.date);
-                    return refDate.getTime() === currentMonthRef.getTime();
-                });
-            }, [expenses, currentMonthRef]);
-
-            const totalBudget = costCenters.reduce((acc, cc) => acc + (cc.active ? parseFloat(cc.budget) : 0), 0);
-            const totalSpent = monthlyExpenses.reduce((acc, e) => acc + parseFloat(e.amount), 0);
-            const percentTotal = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
-            const remaining = totalBudget - totalSpent;
-
-            const byCenter = costCenters.map(cc => {
-                const spent = monthlyExpenses
-                    .filter(e => e.cost_center_id === cc.id)
-                    .reduce((acc, e) => acc + parseFloat(e.amount), 0);
-                return { ...cc, spent, percent: cc.budget > 0 ? (spent / cc.budget) * 100 : 0 };
-            }).sort((a,b) => b.percent - a.percent);
-
-            const pieChartStyle = useMemo(() => {
-                if (totalSpent === 0) return { background: '#e2e8f0' };
-                let currentDeg = 0;
-                const gradients = byCenter.map(cc => {
-                    if (cc.spent <= 0) return '';
-                    const deg = (cc.spent / totalSpent) * 360;
-                    const str = `${cc.color} ${currentDeg}deg ${currentDeg + deg}deg`;
-                    currentDeg += deg;
-                    return str;
-                }).filter(Boolean).join(', ');
-                return { background: `conic-gradient(${gradients})` };
-            }, [byCenter, totalSpent]);
-
-            const shiftMonth = (offset) => {
-                const newDate = new Date(currentMonthRef);
-                newDate.setMonth(newDate.getMonth() + offset);
-                onChangeMonth(newDate);
-            };
-
-            return (
-                <div className="space-y-6 fade-in">
-                    {/* Header Controls */}
-                    <div className="flex flex-col sm:flex-row justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-                        <h2 className="text-xl font-bold text-gray-800 mb-4 sm:mb-0">Painel de Controle</h2>
-                        <div className="flex items-center bg-gray-50 rounded-lg p-1">
-                            <button onClick={() => shiftMonth(-1)} className="p-2 hover:bg-white hover:shadow-sm rounded-md transition text-gray-600">
-                                <i data-lucide="chevron-left" className="w-5 h-5"></i>
-                            </button>
-                            <div className="px-6 text-center min-w-[150px]">
-                                <span className="text-xs text-gray-400 font-semibold uppercase block">Referência</span>
-                                <span className="text-sm font-bold text-gray-800 capitalize">{getMonthName(currentMonthRef)}</span>
-                            </div>
-                            <button onClick={() => shiftMonth(1)} className="p-2 hover:bg-white hover:shadow-sm rounded-md transition text-gray-600">
-                                <i data-lucide="chevron-right" className="w-5 h-5"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* KPI Cards Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <Card className="p-6 border-l-4 border-l-blue-500">
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <p className="text-sm font-medium text-gray-500">Total Gasto</p>
-                                    <h3 className="text-2xl font-bold text-gray-800 mt-1">{formatMoney(totalSpent)}</h3>
-                                </div>
-                                <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
-                                    <i data-lucide="trending-up" className="w-5 h-5"></i>
-                                </div>
-                            </div>
-                            <div className="mt-4 text-xs text-gray-400">
-                                {percentTotal.toFixed(1)}% do orçamento consumido
-                            </div>
-                        </Card>
-
-                        <Card className="p-6 border-l-4 border-l-gray-300">
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <p className="text-sm font-medium text-gray-500">Orçamento Total</p>
-                                    <h3 className="text-2xl font-bold text-gray-800 mt-1">{formatMoney(totalBudget)}</h3>
-                                </div>
-                                <div className="p-2 bg-gray-50 rounded-lg text-gray-600">
-                                    <i data-lucide="wallet" className="w-5 h-5"></i>
-                                </div>
-                            </div>
-                             <div className="w-full bg-gray-100 h-1.5 rounded-full mt-5 overflow-hidden">
-                                <div className="h-full bg-gray-400 rounded-full" style={{ width: '100%' }}></div>
-                            </div>
-                        </Card>
-
-                         <Card className={`p-6 border-l-4 ${remaining >= 0 ? 'border-l-green-500' : 'border-l-red-500'}`}>
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <p className="text-sm font-medium text-gray-500">Saldo Restante</p>
-                                    <h3 className={`text-2xl font-bold mt-1 ${remaining >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                        {formatMoney(remaining)}
-                                    </h3>
-                                </div>
-                                <div className={`p-2 rounded-lg ${remaining >= 0 ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
-                                    <i data-lucide={remaining >= 0 ? "piggy-bank" : "alert-circle"} className="w-5 h-5"></i>
-                                </div>
-                            </div>
-                            <div className="mt-4 text-xs text-gray-400">
-                                Disponível para gastar
-                            </div>
-                        </Card>
-                    </div>
-
-                    {/* Chart & Detailed List Grid */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        {/* Chart Section */}
-                        <Card className="p-6 lg:col-span-1 flex flex-col items-center justify-center">
-                            <h3 className="w-full text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
-                                <i data-lucide="pie-chart" className="w-5 h-5 text-gray-400"></i> Distribuição
-                            </h3>
-                            <div className="w-48 h-48 sm:w-64 sm:h-64 rounded-full flex-shrink-0 border-8 border-gray-50 shadow-inner" style={pieChartStyle}></div>
-                            <div className="mt-6 w-full space-y-2">
-                                {byCenter.slice(0, 3).map(cc => (
-                                    <div key={cc.id} className="flex justify-between text-sm">
-                                        <div className="flex items-center gap-2">
-                                            <span className="w-3 h-3 rounded-full" style={{backgroundColor: cc.color}}></span>
-                                            <span className="text-gray-600">{cc.name}</span>
-                                        </div>
-                                        <span className="font-medium text-gray-800">{Math.round(cc.percent)}%</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </Card>
-
-                        {/* Detail List Section */}
-                        <Card className="p-6 lg:col-span-2">
-                            <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
-                                <i data-lucide="bar-chart-2" className="w-5 h-5 text-gray-400"></i> Detalhamento por Centro
-                            </h3>
-                            <div className="space-y-4">
-                                {byCenter.map(cc => (
-                                    <div key={cc.id} className="group hover:bg-gray-50 p-3 rounded-lg transition-colors border border-transparent hover:border-gray-100">
-                                        <div className="flex justify-between items-center mb-2">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-lg flex items-center justify-center text-white shadow-sm font-bold text-lg" style={{backgroundColor: cc.color}}>
-                                                    {cc.name.charAt(0)}
-                                                </div>
-                                                <div>
-                                                    <p className="font-bold text-gray-800">{cc.name}</p>
-                                                    <p className="text-xs text-gray-400">Orçamento: {formatMoney(cc.budget)}</p>
-                                                </div>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className={`font-bold ${cc.spent > cc.budget ? 'text-red-500' : 'text-gray-700'}`}>
-                                                    {formatMoney(cc.spent)}
-                                                </p>
-                                                <p className="text-xs text-gray-400">
-                                                    Restam {formatMoney(cc.budget - cc.spent)}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <div className="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden">
-                                            <div className={`h-full rounded-full transition-all duration-500 ${cc.spent > cc.budget ? 'bg-red-500' : 'bg-primary'}`}
-                                                 style={{width: `${Math.min(cc.percent, 100)}%`, backgroundColor: cc.spent <= cc.budget ? cc.color : undefined}}></div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </Card>
-                    </div>
-                </div>
-            );
-        };
-
-        // --- COMPONENT: COST CENTERS SCREEN (Definição REINSERIDA) ---
-        const CostCentersScreen = ({ costCenters, onUpdate }) => {
-            const [editing, setEditing] = useState(null);
-            const [form, setForm] = useState({ name: '', budget: '', color: '#3b82f6' });
-
-            const handleSave = async (e) => {
-                e.preventDefault();
-                if (editing) {
-                    await supabase.from('cost_centers').update(form).eq('id', editing.id);
-                } else {
-                    await supabase.from('cost_centers').insert(form);
-                }
-                setEditing(null);
-                setForm({ name: '', budget: '', color: '#3b82f6' });
-                onUpdate();
-            };
-
-            const startEdit = (cc) => {
-                setEditing(cc);
-                setForm({ name: cc.name, budget: cc.budget, color: cc.color });
-            };
-
-            return (
-                <div className="pb-20 space-y-6 fade-in">
-                    <h2 className="text-xl font-bold text-gray-800">Gerenciar Centros de Custo</h2>
-                    
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        {/* Form Section */}
-                        <div className="lg:col-span-1">
-                            <Card className="p-6 sticky top-6">
-                                <h3 className="text-sm font-bold text-gray-500 mb-4 uppercase tracking-wide border-b pb-2">
-                                    {editing ? 'Editar Categoria' : 'Nova Categoria'}
-                                </h3>
-                                <form onSubmit={handleSave} className="space-y-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
-                                        <input placeholder="Ex: Mercado" required value={form.name} onChange={e => setForm({...form, name: e.target.value})} 
-                                            className="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-accent focus:border-transparent outline-none"/>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Orçamento Mensal</label>
-                                        <div className="relative">
-                                            <span className="absolute left-3 top-2.5 text-gray-400 text-sm">R$</span>
-                                            <input type="number" required value={form.budget} onChange={e => setForm({...form, budget: e.target.value})} 
-                                                className="w-full border rounded-lg p-2.5 pl-9 text-sm focus:ring-2 focus:ring-accent focus:border-transparent outline-none"/>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Cor da Etiqueta</label>
-                                        <div className="flex gap-2 items-center">
-                                            <input type="color" value={form.color} onChange={e => setForm({...form, color: e.target.value})} 
-                                                className="h-10 w-14 border rounded cursor-pointer p-1"/>
-                                            <span className="text-sm text-gray-500">{form.color}</span>
-                                        </div>
-                                    </div>
-                                    <div className="flex gap-3 pt-2">
-                                        <Button className="flex-1">{editing ? 'Salvar Alterações' : 'Criar Centro'}</Button>
-                                        {editing && <Button type="button" variant="secondary" onClick={() => { setEditing(null); setForm({ name: '', budget: '', color: '#3b82f6' }); }}>Cancelar</Button>}
-                                    </div>
-                                </form>
-                            </Card>
-                        </div>
-
-                        {/* List Grid Section */}
-                        <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {costCenters.map(cc => (
-                                <Card key={cc.id} className="p-4 hover:shadow-md transition-shadow cursor-pointer relative overflow-hidden group border-l-4" style={{borderLeftColor: cc.color}}>
-                                    <div className="flex justify-between items-start">
-                                        <div>
-                                            <h4 className="font-bold text-gray-800 text-lg">{cc.name}</h4>
-                                            <p className="text-sm text-gray-500 mt-1">Orçamento: <span className="font-semibold text-gray-700">{formatMoney(cc.budget)}</span></p>
-                                        </div>
-                                        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button onClick={(e) => {e.stopPropagation(); startEdit(cc)}} className="p-2 bg-gray-100 hover:bg-white text-blue-600 rounded-full shadow-sm">
-                                                <i data-lucide="edit-2" className="w-4 h-4"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div className="absolute top-2 right-2 opacity-10 pointer-events-none">
-                                        <i data-lucide="tag" className="w-12 h-12" style={{color: cc.color}}></i>
-                                    </div>
-                                </Card>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            );
-        };
-
-        // --- SUB-COMPONENT: GERENCIADOR DE FIXAS (RecurrenceManager) ---
-        const RecurrenceManager = ({ costCenters, onUpdate, user, onClose, expenses }) => {
-            const [recurrences, setRecurrences] = useState([]);
-            const [form, setForm] = useState({ description: '', amount: '', cost_center_id: '', day_of_charge: 10, valid_until: '' });
-            const [isProcessing, setIsProcessing] = useState(false);
+        // --- 4. FUNÇÕES GASTOS FIXOS ---
+        async function loadFixos() {
+            const { data } = await supabase.from('gastos_fixos').select('*');
+            const lista = document.getElementById('listaFixos');
+            lista.innerHTML = '';
             
-            const fetchRecurrences = async () => {
-                const { data } = await supabase.from('recurrences').select('*').order('created_at');
-                if (data) setRecurrences(data);
-            };
-
-            useEffect(() => { fetchRecurrences(); }, []);
-
-            const handleAdd = async (e) => {
-                e.preventDefault();
-                setIsProcessing(true);
-                
-                // 1. Criar a Recorrência no Banco (para referência)
-                const { data: recData, error } = await supabase.from('recurrences').insert({
-                    description: form.description,
-                    amount: form.amount,
-                    cost_center_id: form.cost_center_id,
-                    day_of_charge: form.day_of_charge,
-                    active: true
-                }).select();
-
-                if (error) {
-                    alert("Erro ao criar: " + error.message);
-                    setIsProcessing(false);
-                    return;
-                }
-
-                // 2. Se tiver Data Final, gerar todas as despesas futuras (Mass Generation)
-                if (form.valid_until) {
-                    const endDate = new Date(form.valid_until);
-                    let currentDate = new Date();
-                    // Ajusta para o dia de cobrança do mês atual
-                    currentDate.setDate(form.day_of_charge);
-                    
-                    const bulkExpenses = [];
-                    while (currentDate <= endDate) {
-                        bulkExpenses.push({
-                            description: `[Fixo] ${form.description}`,
-                            amount: form.amount,
-                            date: currentDate.toISOString().split('T')[0],
-                            cost_center_id: form.cost_center_id,
-                            user_email: user.email,
-                            type: 'fixo',
-                            is_recurrence: true
-                        });
-                        // Avança 1 mês
-                        currentDate.setMonth(currentDate.getMonth() + 1);
+            if (data) {
+                const hoje = new Date();
+                data.forEach(f => {
+                    // Lógica: Se data_fim existe E já passou, não mostra (ou mostra riscado)
+                    let ativo = true;
+                    if (f.data_fim) {
+                        const fim = new Date(f.data_fim);
+                        if (fim < hoje) ativo = false;
                     }
 
-                    if (bulkExpenses.length > 0) {
-                        const confirmGen = confirm(`Deseja gerar automaticamente ${bulkExpenses.length} lançamentos até ${formatDate(form.valid_until)}?`);
-                        if (confirmGen) {
-                            await supabase.from('expenses').insert(bulkExpenses);
-                        }
+                    if (ativo) {
+                        lista.innerHTML += `
+                            <li>
+                                <div>
+                                    <strong>${f.descricao}</strong> <br>
+                                    <small>Início: ${f.data_inicio} ${f.data_fim ? '| Fim: '+f.data_fim : ''}</small>
+                                </div>
+                                <span style="color: #d9534f; font-weight: bold;">R$ ${parseFloat(f.valor).toFixed(2)}</span>
+                            </li>`;
                     }
-                }
-
-                setForm({ description: '', amount: '', cost_center_id: '', day_of_charge: 10, valid_until: '' });
-                await fetchRecurrences();
-                onUpdate(); // Atualiza a lista principal de gastos
-                setIsProcessing(false);
-            };
-
-            const toggleActive = async (id, currentVal) => {
-                await supabase.from('recurrences').update({ active: !currentVal }).eq('id', id);
-                fetchRecurrences();
-            };
-
-            const processCurrentMonth = async () => {
-                const today = new Date();
-                
-                const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString();
-                const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString();
-                
-                const { data: existingExpenses } = await supabase.from('expenses')
-                    .select('description, amount')
-                    .gte('date', startOfMonth)
-                    .lte('date', endOfMonth)
-                    .eq('is_recurrence', true);
-
-                const existingSignatures = existingExpenses.map(e => e.description);
-
-                const toCreate = recurrences.filter(r => r.active).filter(r => {
-                    const expectedDesc = `[Fixo] ${r.description}`;
-                    return !existingSignatures.includes(expectedDesc);
                 });
+            }
+        }
 
-                if (toCreate.length === 0) {
-                    alert("Todas as contas fixas ativas já foram lançadas neste mês!");
-                    return;
-                }
+        async function addFixo() {
+            const descricao = document.getElementById('fixDesc').value;
+            const valor = document.getElementById('fixValor').value;
+            const inicio = document.getElementById('fixInicio').value;
+            const fim = document.getElementById('fixFim').value || null;
 
-                const confirmed = confirm(`Deseja lançar ${toCreate.length} contas pendentes para este mês?`);
-                if (!confirmed) return;
+            if (!descricao || !valor || !inicio) return alert("Preencha descrição, valor e início!");
 
-                const updates = toCreate.map(r => {
-                    const chargeDate = new Date(today.getFullYear(), today.getMonth(), r.day_of_charge || 10);
-                    return {
-                        description: `[Fixo] ${r.description}`,
-                        amount: r.amount,
-                        date: chargeDate.toISOString().split('T')[0],
-                        cost_center_id: r.cost_center_id,
-                        user_email: user.email,
-                        type: 'fixo',
-                        is_recurrence: true
-                    };
+            await supabase.from('gastos_fixos').insert([{ descricao, valor, data_inicio: inicio, data_fim: fim }]);
+            // Limpar campos
+            document.getElementById('fixDesc').value = '';
+            document.getElementById('fixValor').value = '';
+            loadFixos();
+        }
+
+        // --- 5. FUNÇÕES ORÇAMENTOS ---
+        async function loadOrcamentos() {
+            const { data } = await supabase.from('orcamentos').select('*');
+            const container = document.getElementById('listaOrcamentos');
+            container.innerHTML = '';
+
+            if (data) {
+                data.forEach(o => {
+                    const gasto = parseFloat(o.valor_gasto || 0);
+                    const limite = parseFloat(o.valor_limite);
+                    const saldo = limite - gasto;
+                    const corSaldo = saldo < 0 ? 'red' : 'green';
+
+                    container.innerHTML += `
+                        <div class="orcamento-card">
+                            <div style="display:flex; justify-content:space-between;">
+                                <h3>${o.categoria}</h3>
+                                <button onclick="lancarGasto(${o.id}, ${gasto})" style="height:30px;">+ Lançar Gasto</button>
+                            </div>
+                            <p>Meta: R$ ${limite.toFixed(2)} | Gasto: R$ ${gasto.toFixed(2)}</p>
+                            <p style="color:${corSaldo}"><strong>Saldo Restante: R$ ${saldo.toFixed(2)}</strong></p>
+                            <progress value="${gasto}" max="${limite}" style="width:100%"></progress>
+                        </div>
+                    `;
                 });
+            }
+        }
 
-                await supabase.from('expenses').insert(updates);
-                alert("Processamento concluído!");
-                onUpdate();
-            };
-
-            return (
-                <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 backdrop-blur-sm fade-in">
-                    <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-white flex flex-col">
-                        <div className="p-6 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-10">
-                            <div>
-                                <h2 className="text-xl font-bold text-gray-800">Gerenciador de Contas Fixas</h2>
-                                <p className="text-sm text-gray-500">Configure despesas que se repetem todo mês</p>
-                            </div>
-                            <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full">
-                                <i data-lucide="x" className="w-6 h-6 text-gray-500"></i>
-                            </button>
-                        </div>
-
-                        <div className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
-                            <div className="lg:col-span-1 space-y-6">
-                                <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
-                                    <h3 className="font-bold text-blue-800 mb-2 flex items-center gap-2">
-                                        <i data-lucide="plus-circle" className="w-4 h-4"></i> Nova Fixa
-                                    </h3>
-                                    <form onSubmit={handleAdd} className="space-y-3">
-                                        <input placeholder="Descrição (Ex: Aluguel)" required value={form.description} onChange={e => setForm({...form, description: e.target.value})} 
-                                            className="w-full border border-blue-200 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none"/>
-                                        
-                                        <div className="flex gap-2">
-                                            <input placeholder="Valor" type="number" step="0.01" required value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} 
-                                                className="flex-1 border border-blue-200 rounded-lg p-2.5 text-sm"/>
-                                            <input placeholder="Dia" type="number" max="31" min="1" required value={form.day_of_charge} onChange={e => setForm({...form, day_of_charge: e.target.value})} 
-                                                className="w-20 border border-blue-200 rounded-lg p-2.5 text-sm" title="Dia do Vencimento"/>
-                                        </div>
-
-                                        <select required value={form.cost_center_id} onChange={e => setForm({...form, cost_center_id: e.target.value})} 
-                                            className="w-full border border-blue-200 rounded-lg p-2.5 text-sm bg-white">
-                                            <option value="">Centro de Custo...</option>
-                                            {costCenters.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                                        </select>
-
-                                        <div>
-                                            <label className="text-xs font-bold text-blue-600 uppercase mb-1 block">Data Final (Opcional)</label>
-                                            <input type="date" value={form.valid_until} onChange={e => setForm({...form, valid_until: e.target.value})} 
-                                                className="w-full border border-blue-200 rounded-lg p-2.5 text-sm text-gray-600"/>
-                                            <p className="text-[10px] text-blue-400 mt-1 leading-tight">
-                                                Se preencher, gera <strong>todos</strong> os lançamentos futuros até esta data agora.
-                                            </p>
-                                        </div>
-
-                                        <Button disabled={isProcessing} className="w-full mt-2" variant="accent">
-                                            {isProcessing ? 'Salvando...' : 'Adicionar'}
-                                        </Button>
-                                    </form>
-                                </div>
-
-                                <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 text-center">
-                                    <h4 className="font-bold text-gray-700 text-sm mb-2">Ações Rápidas</h4>
-                                    <Button onClick={processCurrentMonth} variant="secondary" className="w-full text-xs">
-                                        <i data-lucide="refresh-cw" className="w-4 h-4"></i> Processar Mês Atual
-                                    </Button>
-                                    <p className="text-[10px] text-gray-400 mt-2">
-                                        Verifica e lança apenas o que ainda não foi lançado este mês.
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div className="lg:col-span-2 space-y-3 max-h-[500px] overflow-y-auto pr-2">
-                                <h3 className="font-bold text-gray-600 text-sm uppercase tracking-wide mb-2">Contas Cadastradas</h3>
-                                {recurrences.length === 0 && <p className="text-gray-400 text-center py-10">Nenhuma conta fixa configurada.</p>}
-                                {recurrences.map(r => {
-                                     const center = costCenters.find(c => c.id === r.cost_center_id) || { color: '#ccc', name: '-' };
-                                     return (
-                                        <div key={r.id} className={`bg-white border border-gray-100 p-4 rounded-xl flex items-center justify-between shadow-sm ${!r.active && 'opacity-60 bg-gray-50'}`}>
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-12 h-12 rounded-lg bg-gray-100 flex flex-col items-center justify-center text-gray-600 font-bold border border-gray-200">
-                                                    <span className="text-xs uppercase text-gray-400">Dia</span>
-                                                    <span className="text-lg leading-none">{r.day_of_charge}</span>
-                                                </div>
-                                                <div>
-                                                    <div className="flex items-center gap-2">
-                                                        <p className="font-bold text-gray-800">{r.description}</p>
-                                                        <span className="text-[10px] px-2 py-0.5 rounded-full" style={{backgroundColor: center.color + '20', color: center.color}}>
-                                                            {center.name}
-                                                        </span>
-                                                    </div>
-                                                    <p className="text-sm text-gray-500 font-medium">{formatMoney(r.amount)} / mês</p>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-4">
-                                                <button onClick={() => toggleActive(r.id, r.active)} 
-                                                    className={`w-12 h-6 rounded-full flex items-center p-1 transition-colors duration-300 ${r.active ? 'bg-green-500' : 'bg-gray-300'}`}>
-                                                    <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${r.active ? 'translate-x-6' : ''}`}></div>
-                                                </button>
-                                            </div>
-                                        </div>
-                                     );
-                                })}
-                            </div>
-                        </div>
-                    </Card>
-                </div>
-            );
-        };
-
-        // --- LANÇAMENTOS (ADD & LIST) ---
-        const ExpensesScreen = ({ costCenters, onAddExpense, expenses, user }) => {
-            const [amount, setAmount] = useState('');
-            const [description, setDescription] = useState('');
-            const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-            const [centerId, setCenterId] = useState('');
-            const [installments, setInstallments] = useState(1);
-            const [isSubmitting, setIsSubmitting] = useState(false);
-            const [showForm, setShowForm] = useState(false);
+        async function addOrcamento() {
+            const cat = document.getElementById('orcCat').value;
+            const limite = document.getElementById('orcLimite').value;
             
-            const [showRecurrenceManager, setShowRecurrenceManager] = useState(false);
+            if(!cat || !limite) return alert("Preencha tudo!");
+            
+            await supabase.from('orcamentos').insert([{ categoria: cat, valor_limite: limite }]);
+            document.getElementById('orcCat').value = '';
+            document.getElementById('orcLimite').value = '';
+            loadOrcamentos();
+        }
 
-            const handleSubmit = async (e) => {
-                e.preventDefault();
-                setIsSubmitting(true);
-                const baseDate = new Date(date);
-                const promises = [];
-                const valPerInstallment = parseFloat(amount) / installments;
+        async function lancarGasto(id, valorAtual) {
+            const novoGasto = prompt("Quanto você gastou agora?");
+            if (novoGasto) {
+                const total = parseFloat(valorAtual) + parseFloat(novoGasto);
+                await supabase.from('orcamentos').update({ valor_gasto: total }).eq('id', id);
+                loadOrcamentos();
+            }
+        }
 
-                for (let i = 0; i < installments; i++) {
-                    const instDate = new Date(baseDate);
-                    instDate.setMonth(baseDate.getMonth() + i);
-                    promises.push(supabase.from('expenses').insert({
-                        description: installments > 1 ? `${description} (${i+1}/${installments})` : description,
-                        amount: valPerInstallment,
-                        date: instDate.toISOString().split('T')[0],
-                        cost_center_id: centerId,
-                        user_email: user.email,
-                        installment_current: i + 1,
-                        installment_total: installments
-                    }));
-                }
-                await Promise.all(promises);
-                await onAddExpense(); 
-                setIsSubmitting(false);
-                setShowForm(false);
-                setAmount('');
-                setDescription('');
-                setInstallments(1);
-            };
+        // Inicializar na primeira aba
+        loadReceitas();
 
-            const recentExpenses = expenses.slice(0, 50); 
-
-            return (
-                <div className="pb-20 md:pb-0 fade-in relative">
-                    {/* Modal Gerenciador de Fixas */}
-                    {showRecurrenceManager && (
-                        <RecurrenceManager 
-                            costCenters={costCenters} 
-                            user={user} 
-                            onUpdate={onAddExpense}
-                            onClose={() => setShowRecurrenceManager(false)} 
-                            expenses={expenses}
-                        />
-                    )}
-
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        {/* Header Mobile + Botão Fixas */}
-                        <div className="lg:hidden flex justify-between items-center mb-4 col-span-1">
-                            <h2 className="text-xl font-bold text-gray-800">Lançamentos</h2>
-                            <div className="flex gap-2">
-                                <Button onClick={() => setShowRecurrenceManager(true)} variant="secondary" className="rounded-full w-10 h-10 p-0 flex items-center justify-center text-gray-600">
-                                    <i data-lucide="clock" className="w-5 h-5"></i>
-                                </Button>
-                                <Button onClick={() => setShowForm(!showForm)} variant="accent" className="rounded-full w-10 h-10 p-0 flex items-center justify-center">
-                                    <i data-lucide={showForm ? "minus" : "plus"}></i>
-                                </Button>
-                            </div>
-                        </div>
-
-                        {/* Left Column: Form (Always visible on Desktop, Toggle on Mobile) */}
-                        <div className={`lg:col-span-1 ${showForm ? 'block' : 'hidden lg:block'}`}>
-                            <Card className="p-6 sticky top-6">
-                                <div className="flex justify-between items-center mb-6">
-                                    <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                                        <i data-lucide="plus-circle" className="w-5 h-5 text-accent"></i> Novo Gasto
-                                    </h3>
-                                    {/* Desktop Recurrence Button inside Card Header */}
-                                    <button 
-                                        onClick={() => setShowRecurrenceManager(true)}
-                                        className="hidden lg:flex items-center gap-1 text-xs font-bold text-gray-500 hover:text-accent bg-gray-50 hover:bg-blue-50 px-3 py-1.5 rounded-full transition-colors"
-                                        title="Gerenciar Contas Fixas"
-                                    >
-                                        <i data-lucide="settings" className="w-3 h-3"></i> Fixas
-                                    </button>
-                                </div>
-                                
-                                <form onSubmit={handleSubmit} className="space-y-4">
-                                    <div>
-                                        <label className="text-xs font-bold text-gray-500 uppercase">Valor Total</label>
-                                        <div className="relative">
-                                            <span className="absolute left-0 top-2 text-gray-400 font-bold">R$</span>
-                                            <input type="number" step="0.01" required value={amount} onChange={e => setAmount(e.target.value)} 
-                                                className="w-full pl-8 text-2xl font-bold border-b-2 border-gray-200 focus:border-accent outline-none py-1 text-gray-800 bg-transparent placeholder-gray-300" placeholder="0,00"/>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-bold text-gray-500 uppercase">Descrição</label>
-                                        <input type="text" required value={description} onChange={e => setDescription(e.target.value)} 
-                                            className="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition" placeholder="Ex: Compras Supermercado"/>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="text-xs font-bold text-gray-500 uppercase">Data da Compra</label>
-                                            <input type="date" required value={date} onChange={e => setDate(e.target.value)} 
-                                                className="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition"/>
-                                        </div>
-                                        <div>
-                                            <label className="text-xs font-bold text-gray-500 uppercase">Centro de Custo</label>
-                                            <select required value={centerId} onChange={e => setCenterId(e.target.value)} 
-                                                className="w-full border rounded-lg p-2.5 text-sm bg-white focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition">
-                                                <option value="">Selecione...</option>
-                                                {costCenters.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-bold text-gray-500 uppercase">Parcelamento</label>
-                                        <select value={installments} onChange={e => setInstallments(parseInt(e.target.value))} 
-                                            className="w-full border rounded-lg p-2.5 text-sm bg-white focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition">
-                                            <option value="1">À vista (1x)</option>
-                                            {[2,3,4,5,6,10,12,18,24].map(n => <option key={n} value={n}>{n}x</option>)}
-                                        </select>
-                                    </div>
-                                    <Button disabled={isSubmitting} className="w-full py-3 mt-4">
-                                        {isSubmitting ? 'Salvando...' : 'Confirmar Lançamento'}
-                                    </Button>
-                                </form>
-                            </Card>
-                        </div>
-
-                        {/* Right Column: List */}
-                        <div className="lg:col-span-2 space-y-4">
-                             <div className="hidden lg:flex justify-between items-center mb-2">
-                                <h2 className="text-xl font-bold text-gray-800">Histórico Recente</h2>
-                                 <span className="text-sm text-gray-500">{recentExpenses.length} registros exibidos</span>
-                            </div>
-
-                            {/* Desktop Table View */}
-                            <div className="hidden md:block bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                                <table className="w-full text-left text-sm text-gray-600">
-                                    <thead className="bg-gray-50 text-xs uppercase font-bold text-gray-500">
-                                        <tr>
-                                            <th className="px-6 py-4">Data</th>
-                                            <th className="px-6 py-4">Descrição</th>
-                                            <th className="px-6 py-4">Categoria</th>
-                                            <th className="px-6 py-4">Usuário</th>
-                                            <th className="px-6 py-4 text-right">Valor</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-100">
-                                        {recentExpenses.map(expense => {
-                                            const center = costCenters.find(c => c.id === expense.cost_center_id) || { color: '#ccc', name: '-' };
-                                            return (
-                                                <tr key={expense.id} className="hover:bg-gray-50 transition-colors">
-                                                    <td className="px-6 py-4 whitespace-nowrap">{formatDate(expense.date)}</td>
-                                                    <td className="px-6 py-4 font-medium text-gray-900">{expense.description}</td>
-                                                    <td className="px-6 py-4">
-                                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" style={{backgroundColor: center.color + '20', color: center.color}}>
-                                                            {center.name}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-6 py-4 text-xs">{expense.user_email.split('@')[0]}</td>
-                                                    <td className="px-6 py-4 text-right font-bold text-gray-800">
-                                                        {formatMoney(expense.amount)}
-                                                        {expense.installment_total > 1 && (
-                                                            <span className="ml-2 text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full">
-                                                                {expense.installment_current}/{expense.installment_total}
-                                                            </span>
-                                                        )}
-                                                    </td>
-                                                </tr>
-                                            )
-                                        })}
-                                    </tbody>
-                                </table>
-                                 {recentExpenses.length === 0 && <p className="text-center py-8 text-gray-400">Nenhum registro encontrado.</p>}
-                            </div>
-
-                            {/* Mobile Card View */}
-                            <div className="md:hidden space-y-3">
-                                {recentExpenses.length === 0 && <p className="text-center py-8 text-gray-400">Nenhum registro.</p>}
-                                {recentExpenses.map(expense => {
-                                    const center = costCenters.find(c => c.id === expense.cost_center_id) || { color: '#ccc', name: 'Desconhecido' };
-                                    return (
-                                        <div key={expense.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between relative overflow-hidden">
-                                            <div className="absolute left-0 top-0 bottom-0 w-1.5" style={{backgroundColor: center.color}}></div>
-                                            <div className="flex-1 min-w-0 pl-3">
-                                                <p className="font-bold text-gray-800 truncate">{expense.description}</p>
-                                                <div className="flex text-xs text-gray-500 gap-2 mt-1">
-                                                    <span>{formatDate(expense.date)}</span>
-                                                    <span>•</span>
-                                                    <span className="truncate max-w-[100px]">{center.name}</span>
-                                                </div>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className="font-bold text-gray-800 text-lg">{formatMoney(expense.amount)}</p>
-                                                {expense.installment_total > 1 && (
-                                                    <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">
-                                                        {expense.installment_current}/{expense.installment_total}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            );
-        };
-
-        // --- APP PRINCIPAL ---
-        const App = () => {
-            const [session, setSession] = useState(null);
-            const [view, setView] = useState('dashboard');
-            const [costCenters, setCostCenters] = useState([]);
-            const [expenses, setExpenses] = useState([]);
-            const [currentMonthRef, setCurrentMonthRef] = useState(new Date(new Date().getFullYear(), new Date().getMonth(), 1)); 
-
-            useEffect(() => {
-                if (!supabase) return;
-                supabase.auth.getSession().then(({ data: { session } }) => {
-                    setSession(session);
-                    if (session) loadData();
-                });
-                const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-                    setSession(session);
-                    if (session) loadData();
-                });
-                return () => subscription.unsubscribe();
-            }, []);
-
-            useEffect(() => {
-                if (window.lucide) window.lucide.createIcons();
-            }, [view, session, expenses, costCenters]);
-
-            const loadData = async () => {
-                if (!supabase) return;
-                const [ccData, expData] = await Promise.all([
-                    supabase.from('cost_centers').select('*').eq('active', true),
-                    supabase.from('expenses').select('*').order('date', { ascending: false })
-                ]);
-                
-                if (ccData.data) setCostCenters(ccData.data);
-                if (expData.data) setExpenses(expData.data);
-            };
-
-            const handleLogout = async () => {
-                if (supabase) await supabase.auth.signOut();
-            };
-
-            if (!supabase) return <SetupScreen error={initError} />;
-            if (!session) return <LoginScreen />;
-
-            return (
-                <div className="min-h-screen bg-slate-50 flex">
-                    {/* Desktop Sidebar */}
-                    <Sidebar view={view} setView={setView} handleLogout={handleLogout} user={session.user} />
-
-                    {/* Main Content Area */}
-                    <main className="flex-1 flex flex-col h-screen overflow-hidden md:pl-64 transition-all duration-300">
-                        {/* Mobile Header (Hidden on Desktop) */}
-                        <header className="md:hidden bg-white p-4 shadow-sm flex justify-between items-center z-20">
-                             <h1 className="text-lg font-bold text-primary flex items-center gap-2">
-                                <i data-lucide="wallet" className="text-accent"></i> Finanças
-                            </h1>
-                            <button onClick={handleLogout} className="text-gray-500"><i data-lucide="log-out"></i></button>
-                        </header>
-
-                        {/* Scrollable Content */}
-                        <div className="flex-1 overflow-y-auto p-4 md:p-8 relative">
-                             <div className="max-w-7xl mx-auto pb-20 md:pb-0">
-                                {view === 'dashboard' && <Dashboard user={session.user} costCenters={costCenters} expenses={expenses} currentMonthRef={currentMonthRef} onChangeMonth={setCurrentMonthRef} />}
-                                {view === 'expenses' && <ExpensesScreen user={session.user} costCenters={costCenters} expenses={expenses} onAddExpense={loadData} />}
-                                {view === 'costcenters' && <CostCentersScreen costCenters={costCenters} onUpdate={loadData} />}
-                            </div>
-                        </div>
-
-                        {/* Mobile Bottom Navigation (Hidden on Desktop) */}
-                        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-3 flex justify-between items-center z-50">
-                            <button onClick={() => setView('dashboard')} className={`flex flex-col items-center ${view === 'dashboard' ? 'text-primary' : 'text-gray-400'}`}>
-                                <i data-lucide="pie-chart" className="w-6 h-6"></i>
-                                <span className="text-[10px] mt-1">Visão</span>
-                            </button>
-                            <button onClick={() => setView('expenses')} className={`flex flex-col items-center ${view === 'expenses' ? 'text-primary' : 'text-gray-400'}`}>
-                                <i data-lucide="list" className="w-6 h-6"></i>
-                                <span className="text-[10px] mt-1">Gastos</span>
-                            </button>
-                            <div className="relative -top-5">
-                                <button onClick={() => setView('expenses')} className="bg-primary text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg transform active:scale-95 transition">
-                                    <i data-lucide="plus" className="w-8 h-8"></i>
-                                </button>
-                            </div>
-                            <button onClick={() => setView('costcenters')} className={`flex flex-col items-center ${view === 'costcenters' ? 'text-primary' : 'text-gray-400'}`}>
-                                <i data-lucide="wallet" className="w-6 h-6"></i>
-                                <span className="text-[10px] mt-1">Centros</span>
-                            </button>
-                        </nav>
-                    </main>
-                </div>
-            );
-        };
-
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
     </script>
 </body>
 </html>
