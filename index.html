@@ -30,6 +30,8 @@
                         primary: '#0f172a',
                         secondary: '#334155',
                         accent: '#3b82f6',
+                        surface: '#ffffff',
+                        background: '#f1f5f9'
                     }
                 }
             }
@@ -43,6 +45,10 @@
         /* Scrollbar hide for cleaner UI */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Animações suaves */
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -62,7 +68,6 @@
 
         try {
             // 1. Tenta localizar a biblioteca globalmente (suporta variações de CDN: minúsculo ou maiúsculo)
-            // Acessamos via 'window' para evitar conflito com variáveis locais
             const sbLib = window.supabase || window.Supabase;
 
             if (!sbLib || !sbLib.createClient) {
@@ -123,31 +128,44 @@
         };
 
         // ==========================================
-        // COMPONENTES
+        // COMPONENTES DE UI
         // ==========================================
+
+        const Card = ({ children, className = "" }) => (
+            <div className={`bg-white rounded-xl shadow-sm border border-slate-100 ${className}`}>
+                {children}
+            </div>
+        );
+
+        const Button = ({ children, onClick, variant = 'primary', className = "", disabled=false }) => {
+            const baseClass = "px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2";
+            const variants = {
+                primary: "bg-primary text-white hover:bg-slate-800 shadow-md hover:shadow-lg",
+                secondary: "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50",
+                accent: "bg-accent text-white hover:bg-blue-600 shadow-md",
+                ghost: "text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+            };
+            return (
+                <button disabled={disabled} onClick={onClick} className={`${baseClass} ${variants[variant]} ${className} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                    {children}
+                </button>
+            );
+        };
 
         // --- TELA DE AVISO DE CONFIGURAÇÃO ---
         const SetupScreen = ({ error }) => (
             <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
-                <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md text-center">
+                <Card className="p-8 w-full max-w-md text-center">
                     <div className="mb-4 flex justify-center text-red-500">
                         <i data-lucide="alert-triangle" className="w-12 h-12"></i>
                     </div>
                     <h1 className="text-2xl font-bold text-gray-800 mb-2">Erro de Inicialização</h1>
-                    
                     <div className="bg-red-50 text-left p-4 rounded-lg text-sm text-red-800 space-y-2 mb-6 border border-red-200">
                         <p><strong>Detalhe do Erro:</strong></p>
                         <p className="font-mono text-xs break-all">{error || "Desconhecido"}</p>
                     </div>
-
-                    <p className="text-gray-600 mb-4 text-sm">
-                        O sistema não conseguiu carregar as dependências necessárias.
-                    </p>
-                    
-                    <button onClick={() => window.location.reload()} className="bg-primary text-white py-2 px-6 rounded-md hover:bg-slate-800 transition">
-                        Recarregar Página
-                    </button>
-                </div>
+                    <Button onClick={() => window.location.reload()}>Recarregar Página</Button>
+                </Card>
             </div>
         );
 
@@ -157,13 +175,12 @@
             const [password, setPassword] = useState('');
             const [loading, setLoading] = useState(false);
             const [error, setError] = useState('');
-            const [mode, setMode] = useState('login'); // login or signup
+            const [mode, setMode] = useState('login');
 
             const handleAuth = async (e) => {
                 e.preventDefault();
                 setLoading(true);
                 setError('');
-                
                 try {
                     let result;
                     if (mode === 'signup') {
@@ -177,7 +194,7 @@
                     } else {
                         if (mode === 'signup') {
                             if (result.data?.user && !result.data.session) {
-                                alert("Conta criada! Verifique seu email para confirmar o cadastro antes de logar.");
+                                alert("Conta criada! Verifique seu email para confirmar o cadastro.");
                             } else {
                                 alert("Conta criada e logada!");
                             }
@@ -191,31 +208,93 @@
 
             return (
                 <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
-                    <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
-                        <h1 className="text-2xl font-bold text-center text-primary mb-6">Finanças Familiar 🏡</h1>
-                        {error && <div className="bg-red-100 text-red-600 p-3 rounded mb-4 text-sm">{error}</div>}
+                    <Card className="p-8 w-full max-w-md">
+                        <div className="text-center mb-8">
+                            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 text-primary mb-4">
+                                <i data-lucide="wallet" className="w-6 h-6"></i>
+                            </div>
+                            <h1 className="text-2xl font-bold text-primary">Finanças Familiar</h1>
+                            <p className="text-gray-500 text-sm mt-2">Controle orçamentário inteligente</p>
+                        </div>
+
+                        {error && <div className="bg-red-50 text-red-600 p-3 rounded-lg mb-4 text-sm border border-red-100">{error}</div>}
+                        
                         <form onSubmit={handleAuth} className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700">Email</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                                 <input required type="email" value={email} onChange={e => setEmail(e.target.value)} 
-                                    className="mt-1 block w-full rounded-md border-gray-300 border p-2 shadow-sm focus:border-accent focus:ring-accent"/>
+                                    className="w-full rounded-lg border-gray-300 border p-2.5 shadow-sm focus:border-accent focus:ring-accent transition"/>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700">Senha</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Senha</label>
                                 <input required type="password" value={password} onChange={e => setPassword(e.target.value)} 
-                                    className="mt-1 block w-full rounded-md border-gray-300 border p-2 shadow-sm focus:border-accent focus:ring-accent"/>
+                                    className="w-full rounded-lg border-gray-300 border p-2.5 shadow-sm focus:border-accent focus:ring-accent transition"/>
                             </div>
-                            <button disabled={loading} className="w-full bg-primary text-white py-2 px-4 rounded-md hover:bg-slate-800 transition">
+                            <Button disabled={loading} className="w-full">
                                 {loading ? 'Processando...' : (mode === 'login' ? 'Entrar' : 'Criar Conta')}
-                            </button>
+                            </Button>
                         </form>
-                        <div className="mt-4 text-center">
-                            <button onClick={() => setMode(mode === 'login' ? 'signup' : 'login')} className="text-sm text-accent hover:underline">
+                        <div className="mt-6 text-center">
+                            <button onClick={() => setMode(mode === 'login' ? 'signup' : 'login')} className="text-sm text-accent hover:text-blue-700 font-medium transition">
                                 {mode === 'login' ? 'Não tem conta? Cadastre-se' : 'Já tem conta? Entrar'}
                             </button>
                         </div>
-                    </div>
+                    </Card>
                 </div>
+            );
+        };
+
+        // --- SIDEBAR (DESKTOP) ---
+        const Sidebar = ({ view, setView, handleLogout, user }) => {
+            const menuItems = [
+                { id: 'dashboard', label: 'Visão Geral', icon: 'pie-chart' },
+                { id: 'expenses', label: 'Lançamentos', icon: 'list' },
+                { id: 'recurrence', label: 'Contas Fixas', icon: 'calendar' },
+                { id: 'costcenters', label: 'Centros de Custo', icon: 'wallet' },
+            ];
+
+            return (
+                <aside className="hidden md:flex flex-col w-64 bg-white border-r border-gray-200 h-screen fixed left-0 top-0 z-50">
+                    <div className="p-6 border-b border-gray-100 flex items-center gap-3">
+                        <div className="bg-primary text-white p-2 rounded-lg">
+                            <i data-lucide="wallet" className="w-5 h-5"></i>
+                        </div>
+                        <span className="font-bold text-gray-800 text-lg">Finanças</span>
+                    </div>
+                    
+                    <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+                        {menuItems.map(item => (
+                            <button 
+                                key={item.id}
+                                onClick={() => setView(item.id)}
+                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                                    view === item.id 
+                                    ? 'bg-blue-50 text-accent' 
+                                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                                }`}
+                            >
+                                <i data-lucide={item.icon} className="w-5 h-5"></i>
+                                {item.label}
+                            </button>
+                        ))}
+                    </nav>
+
+                    <div className="p-4 border-t border-gray-100">
+                        <div className="flex items-center gap-3 mb-4 px-2">
+                            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-600">
+                                <i data-lucide="user" className="w-4 h-4"></i>
+                            </div>
+                            <div className="overflow-hidden">
+                                <p className="text-sm font-medium text-gray-700 truncate">{user?.email.split('@')[0]}</p>
+                                <p className="text-xs text-gray-400">Logado</p>
+                            </div>
+                        </div>
+                        <button onClick={handleLogout} className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                            <i data-lucide="log-out" className="w-4 h-4"></i>
+                            Sair do Sistema
+                        </button>
+                    </div>
+                </aside>
             );
         };
 
@@ -231,6 +310,7 @@
             const totalBudget = costCenters.reduce((acc, cc) => acc + (cc.active ? parseFloat(cc.budget) : 0), 0);
             const totalSpent = monthlyExpenses.reduce((acc, e) => acc + parseFloat(e.amount), 0);
             const percentTotal = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
+            const remaining = totalBudget - totalSpent;
 
             const byCenter = costCenters.map(cc => {
                 const spent = monthlyExpenses
@@ -259,73 +339,130 @@
             };
 
             return (
-                <div className="space-y-6 pb-20">
-                    <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm">
-                        <button onClick={() => shiftMonth(-1)} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200">←</button>
-                        <div className="text-center">
-                            <h2 className="text-sm text-gray-500 font-semibold">REFERÊNCIA</h2>
-                            <h3 className="text-lg font-bold text-primary capitalize">{getMonthName(currentMonthRef)}</h3>
-                        </div>
-                        <button onClick={() => shiftMonth(1)} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200">→</button>
-                    </div>
-
-                    <div className="bg-primary text-white p-6 rounded-2xl shadow-lg relative overflow-hidden">
-                        <div className="relative z-10">
-                            <p className="text-gray-300 text-sm">Total Gasto / Orçado</p>
-                            <div className="flex items-end gap-2 mt-1">
-                                <h2 className="text-3xl font-bold">{formatMoney(totalSpent)}</h2>
-                                <span className="text-gray-400 mb-1 text-sm">/ {formatMoney(totalBudget)}</span>
+                <div className="space-y-6 fade-in">
+                    {/* Header Controls */}
+                    <div className="flex flex-col sm:flex-row justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                        <h2 className="text-xl font-bold text-gray-800 mb-4 sm:mb-0">Painel de Controle</h2>
+                        <div className="flex items-center bg-gray-50 rounded-lg p-1">
+                            <button onClick={() => shiftMonth(-1)} className="p-2 hover:bg-white hover:shadow-sm rounded-md transition text-gray-600">
+                                <i data-lucide="chevron-left" className="w-5 h-5"></i>
+                            </button>
+                            <div className="px-6 text-center min-w-[150px]">
+                                <span className="text-xs text-gray-400 font-semibold uppercase block">Referência</span>
+                                <span className="text-sm font-bold text-gray-800 capitalize">{getMonthName(currentMonthRef)}</span>
                             </div>
-                            <div className="w-full bg-gray-700 h-3 rounded-full mt-4 overflow-hidden">
-                                <div className={`h-full rounded-full transition-all duration-500 ${percentTotal > 100 ? 'bg-red-500' : 'bg-accent'}`} 
-                                     style={{ width: `${Math.min(percentTotal, 100)}%` }}></div>
-                            </div>
-                            <p className="text-right text-xs mt-1 text-gray-300">{percentTotal.toFixed(1)}% consumido</p>
+                            <button onClick={() => shiftMonth(1)} className="p-2 hover:bg-white hover:shadow-sm rounded-md transition text-gray-600">
+                                <i data-lucide="chevron-right" className="w-5 h-5"></i>
+                            </button>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="bg-white p-5 rounded-xl shadow-sm">
-                            <h3 className="font-bold text-gray-700 mb-4 flex items-center gap-2">
-                                <i data-lucide="pie-chart" className="w-4 h-4"></i> Distribuição
+                    {/* KPI Cards Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <Card className="p-6 border-l-4 border-l-blue-500">
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <p className="text-sm font-medium text-gray-500">Total Gasto</p>
+                                    <h3 className="text-2xl font-bold text-gray-800 mt-1">{formatMoney(totalSpent)}</h3>
+                                </div>
+                                <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
+                                    <i data-lucide="trending-up" className="w-5 h-5"></i>
+                                </div>
+                            </div>
+                            <div className="mt-4 text-xs text-gray-400">
+                                {percentTotal.toFixed(1)}% do orçamento consumido
+                            </div>
+                        </Card>
+
+                        <Card className="p-6 border-l-4 border-l-gray-300">
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <p className="text-sm font-medium text-gray-500">Orçamento Total</p>
+                                    <h3 className="text-2xl font-bold text-gray-800 mt-1">{formatMoney(totalBudget)}</h3>
+                                </div>
+                                <div className="p-2 bg-gray-50 rounded-lg text-gray-600">
+                                    <i data-lucide="wallet" className="w-5 h-5"></i>
+                                </div>
+                            </div>
+                             <div className="w-full bg-gray-100 h-1.5 rounded-full mt-5 overflow-hidden">
+                                <div className="h-full bg-gray-400 rounded-full" style={{ width: '100%' }}></div>
+                            </div>
+                        </Card>
+
+                         <Card className={`p-6 border-l-4 ${remaining >= 0 ? 'border-l-green-500' : 'border-l-red-500'}`}>
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <p className="text-sm font-medium text-gray-500">Saldo Restante</p>
+                                    <h3 className={`text-2xl font-bold mt-1 ${remaining >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                        {formatMoney(remaining)}
+                                    </h3>
+                                </div>
+                                <div className={`p-2 rounded-lg ${remaining >= 0 ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                                    <i data-lucide={remaining >= 0 ? "piggy-bank" : "alert-circle"} className="w-5 h-5"></i>
+                                </div>
+                            </div>
+                            <div className="mt-4 text-xs text-gray-400">
+                                Disponível para gastar
+                            </div>
+                        </Card>
+                    </div>
+
+                    {/* Chart & Detailed List Grid */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        {/* Chart Section */}
+                        <Card className="p-6 lg:col-span-1 flex flex-col items-center justify-center">
+                            <h3 className="w-full text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
+                                <i data-lucide="pie-chart" className="w-5 h-5 text-gray-400"></i> Distribuição
                             </h3>
-                            <div className="flex items-center gap-6">
-                                <div className="w-24 h-24 rounded-full flex-shrink-0 border-4 border-gray-100" style={pieChartStyle}></div>
-                                <div className="space-y-1 text-sm flex-1">
-                                    {byCenter.slice(0, 4).map(cc => (
-                                        <div key={cc.id} className="flex justify-between items-center">
-                                            <div className="flex items-center gap-2">
-                                                <span className="w-3 h-3 rounded-full" style={{backgroundColor: cc.color}}></span>
-                                                <span className="text-gray-600 truncate max-w-[100px]">{cc.name}</span>
-                                            </div>
-                                            <span className="font-medium">{Math.round(cc.percent)}%</span>
+                            <div className="w-48 h-48 sm:w-64 sm:h-64 rounded-full flex-shrink-0 border-8 border-gray-50 shadow-inner" style={pieChartStyle}></div>
+                            <div className="mt-6 w-full space-y-2">
+                                {byCenter.slice(0, 3).map(cc => (
+                                    <div key={cc.id} className="flex justify-between text-sm">
+                                        <div className="flex items-center gap-2">
+                                            <span className="w-3 h-3 rounded-full" style={{backgroundColor: cc.color}}></span>
+                                            <span className="text-gray-600">{cc.name}</span>
                                         </div>
-                                    ))}
-                                </div>
+                                        <span className="font-medium text-gray-800">{Math.round(cc.percent)}%</span>
+                                    </div>
+                                ))}
                             </div>
-                        </div>
+                        </Card>
 
-                        <div className="space-y-3">
-                            <h3 className="font-bold text-gray-700 px-1">Detalhamento</h3>
-                            {byCenter.map(cc => (
-                                <div key={cc.id} className="bg-white p-4 rounded-xl shadow-sm border-l-4" style={{borderLeftColor: cc.color}}>
-                                    <div className="flex justify-between items-center mb-1">
-                                        <span className="font-semibold text-gray-800">{cc.name}</span>
-                                        <span className={`text-sm font-bold ${cc.spent > cc.budget ? 'text-red-500' : 'text-gray-600'}`}>
-                                            {formatMoney(cc.spent)}
-                                        </span>
+                        {/* Detail List Section */}
+                        <Card className="p-6 lg:col-span-2">
+                            <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
+                                <i data-lucide="bar-chart-2" className="w-5 h-5 text-gray-400"></i> Detalhamento por Centro
+                            </h3>
+                            <div className="space-y-4">
+                                {byCenter.map(cc => (
+                                    <div key={cc.id} className="group hover:bg-gray-50 p-3 rounded-lg transition-colors border border-transparent hover:border-gray-100">
+                                        <div className="flex justify-between items-center mb-2">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-lg flex items-center justify-center text-white shadow-sm font-bold text-lg" style={{backgroundColor: cc.color}}>
+                                                    {cc.name.charAt(0)}
+                                                </div>
+                                                <div>
+                                                    <p className="font-bold text-gray-800">{cc.name}</p>
+                                                    <p className="text-xs text-gray-400">Orçamento: {formatMoney(cc.budget)}</p>
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className={`font-bold ${cc.spent > cc.budget ? 'text-red-500' : 'text-gray-700'}`}>
+                                                    {formatMoney(cc.spent)}
+                                                </p>
+                                                <p className="text-xs text-gray-400">
+                                                    Restam {formatMoney(cc.budget - cc.spent)}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden">
+                                            <div className={`h-full rounded-full transition-all duration-500 ${cc.spent > cc.budget ? 'bg-red-500' : 'bg-primary'}`}
+                                                 style={{width: `${Math.min(cc.percent, 100)}%`, backgroundColor: cc.spent <= cc.budget ? cc.color : undefined}}></div>
+                                        </div>
                                     </div>
-                                    <div className="flex justify-between text-xs text-gray-500 mb-2">
-                                        <span>Orçamento: {formatMoney(cc.budget)}</span>
-                                        <span>Restante: {formatMoney(cc.budget - cc.spent)}</span>
-                                    </div>
-                                    <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                                        <div className={`h-full rounded-full ${cc.spent > cc.budget ? 'bg-red-500' : 'bg-green-500'}`}
-                                             style={{width: `${Math.min(cc.percent, 100)}%`}}></div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                                ))}
+                            </div>
+                        </Card>
                     </div>
                 </div>
             );
@@ -344,7 +481,6 @@
             const handleSubmit = async (e) => {
                 e.preventDefault();
                 setIsSubmitting(true);
-
                 const baseDate = new Date(date);
                 const promises = [];
                 const valPerInstallment = parseFloat(amount) / installments;
@@ -352,7 +488,6 @@
                 for (let i = 0; i < installments; i++) {
                     const instDate = new Date(baseDate);
                     instDate.setMonth(baseDate.getMonth() + i);
-                    
                     promises.push(supabase.from('expenses').insert({
                         description: installments > 1 ? `${description} (${i+1}/${installments})` : description,
                         amount: valPerInstallment,
@@ -363,10 +498,8 @@
                         installment_total: installments
                     }));
                 }
-
                 await Promise.all(promises);
                 await onAddExpense(); 
-                
                 setIsSubmitting(false);
                 setShowForm(false);
                 setAmount('');
@@ -374,87 +507,149 @@
                 setInstallments(1);
             };
 
-            const recentExpenses = expenses.slice(0, 20); 
+            const recentExpenses = expenses.slice(0, 50); 
+
+            // Form Component to reuse
+            const ExpenseForm = () => (
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                        <label className="text-xs font-bold text-gray-500 uppercase">Valor Total</label>
+                        <div className="relative">
+                            <span className="absolute left-0 top-2 text-gray-400 font-bold">R$</span>
+                            <input type="number" step="0.01" required value={amount} onChange={e => setAmount(e.target.value)} 
+                                className="w-full pl-8 text-2xl font-bold border-b-2 border-gray-200 focus:border-accent outline-none py-1 text-gray-800 bg-transparent placeholder-gray-300" placeholder="0,00"/>
+                        </div>
+                    </div>
+                    <div>
+                        <label className="text-xs font-bold text-gray-500 uppercase">Descrição</label>
+                        <input type="text" required value={description} onChange={e => setDescription(e.target.value)} 
+                            className="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition" placeholder="Ex: Compras Supermercado"/>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="text-xs font-bold text-gray-500 uppercase">Data da Compra</label>
+                            <input type="date" required value={date} onChange={e => setDate(e.target.value)} 
+                                className="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition"/>
+                        </div>
+                        <div>
+                            <label className="text-xs font-bold text-gray-500 uppercase">Centro de Custo</label>
+                            <select required value={centerId} onChange={e => setCenterId(e.target.value)} 
+                                className="w-full border rounded-lg p-2.5 text-sm bg-white focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition">
+                                <option value="">Selecione...</option>
+                                {costCenters.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label className="text-xs font-bold text-gray-500 uppercase">Parcelamento</label>
+                        <select value={installments} onChange={e => setInstallments(parseInt(e.target.value))} 
+                            className="w-full border rounded-lg p-2.5 text-sm bg-white focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition">
+                            <option value="1">À vista (1x)</option>
+                            {[2,3,4,5,6,10,12,18,24].map(n => <option key={n} value={n}>{n}x</option>)}
+                        </select>
+                    </div>
+                    <Button disabled={isSubmitting} className="w-full py-3 mt-4">
+                        {isSubmitting ? 'Salvando...' : 'Confirmar Lançamento'}
+                    </Button>
+                </form>
+            );
 
             return (
-                <div className="pb-20 space-y-4">
-                    <div className="flex justify-between items-center mb-4">
+                <div className="pb-20 md:pb-0 fade-in grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* Header Mobile */}
+                    <div className="lg:hidden flex justify-between items-center mb-4">
                         <h2 className="text-xl font-bold text-gray-800">Lançamentos</h2>
-                        <button onClick={() => setShowForm(!showForm)} className="bg-accent text-white p-2 rounded-full shadow-lg">
+                        <Button onClick={() => setShowForm(!showForm)} variant="accent" className="rounded-full w-10 h-10 p-0 flex items-center justify-center">
                             <i data-lucide={showForm ? "minus" : "plus"}></i>
-                        </button>
+                        </Button>
                     </div>
 
-                    {showForm && (
-                        <div className="bg-white p-5 rounded-xl shadow-md animate-fade-in">
-                            <form onSubmit={handleSubmit} className="space-y-4">
-                                <div>
-                                    <label className="text-xs text-gray-500 font-bold uppercase">Valor</label>
-                                    <input type="number" step="0.01" required value={amount} onChange={e => setAmount(e.target.value)} 
-                                        className="w-full text-2xl font-bold border-b-2 border-gray-200 focus:border-accent outline-none py-2 text-gray-800" placeholder="R$ 0,00"/>
-                                </div>
-                                <div>
-                                    <label className="text-xs text-gray-500 font-bold uppercase">Descrição</label>
-                                    <input type="text" required value={description} onChange={e => setDescription(e.target.value)} 
-                                        className="w-full border rounded p-2 text-sm" placeholder="Ex: Mercado Semanal"/>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="text-xs text-gray-500 font-bold uppercase">Data</label>
-                                        <input type="date" required value={date} onChange={e => setDate(e.target.value)} 
-                                            className="w-full border rounded p-2 text-sm"/>
-                                        <p className="text-[10px] text-gray-400 mt-1">Virada dia 06</p>
-                                    </div>
-                                    <div>
-                                        <label className="text-xs text-gray-500 font-bold uppercase">Centro de Custo</label>
-                                        <select required value={centerId} onChange={e => setCenterId(e.target.value)} 
-                                            className="w-full border rounded p-2 text-sm bg-white">
-                                            <option value="">Selecione...</option>
-                                            {costCenters.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                                        </select>
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className="text-xs text-gray-500 font-bold uppercase">Parcelas</label>
-                                    <select value={installments} onChange={e => setInstallments(parseInt(e.target.value))} 
-                                        className="w-full border rounded p-2 text-sm bg-white">
-                                        <option value="1">À vista (1x)</option>
-                                        {[2,3,4,5,6,10,12].map(n => <option key={n} value={n}>{n}x</option>)}
-                                    </select>
-                                </div>
-                                <button disabled={isSubmitting} className="w-full bg-primary text-white py-3 rounded-lg font-bold shadow hover:bg-slate-800">
-                                    {isSubmitting ? 'Salvando...' : 'Adicionar Despesa'}
-                                </button>
-                            </form>
-                        </div>
-                    )}
+                    {/* Left Column: Form (Always visible on Desktop, Toggle on Mobile) */}
+                    <div className={`lg:col-span-1 ${showForm ? 'block' : 'hidden lg:block'}`}>
+                        <Card className="p-6 sticky top-6">
+                            <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
+                                <i data-lucide="plus-circle" className="w-5 h-5 text-accent"></i> Novo Gasto
+                            </h3>
+                            <ExpenseForm />
+                        </Card>
+                    </div>
 
-                    <div className="space-y-2">
-                        <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wide">Últimos Gastos</h3>
-                        {recentExpenses.length === 0 && <p className="text-gray-400 text-center py-4">Nenhum gasto registrado.</p>}
-                        {recentExpenses.map(expense => {
-                            const center = costCenters.find(c => c.id === expense.cost_center_id) || { color: '#ccc', name: 'Desconhecido' };
-                            return (
-                                <div key={expense.id} className="bg-white p-3 rounded-lg shadow-sm flex items-center justify-between border-l-4" style={{borderLeftColor: center.color}}>
-                                    <div className="flex-1 min-w-0 mr-2">
-                                        <p className="font-semibold text-gray-800 truncate">{expense.description}</p>
-                                        <div className="flex text-xs text-gray-500 gap-2">
-                                            <span>{formatDate(expense.date)}</span>
-                                            <span>•</span>
-                                            <span className="truncate">{expense.user_email.split('@')[0]}</span>
+                    {/* Right Column: List */}
+                    <div className="lg:col-span-2 space-y-4">
+                         <div className="hidden lg:flex justify-between items-center mb-2">
+                            <h2 className="text-xl font-bold text-gray-800">Histórico Recente</h2>
+                             <span className="text-sm text-gray-500">{recentExpenses.length} registros exibidos</span>
+                        </div>
+
+                        {/* Desktop Table View */}
+                        <div className="hidden md:block bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                            <table className="w-full text-left text-sm text-gray-600">
+                                <thead className="bg-gray-50 text-xs uppercase font-bold text-gray-500">
+                                    <tr>
+                                        <th className="px-6 py-4">Data</th>
+                                        <th className="px-6 py-4">Descrição</th>
+                                        <th className="px-6 py-4">Categoria</th>
+                                        <th className="px-6 py-4">Usuário</th>
+                                        <th className="px-6 py-4 text-right">Valor</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100">
+                                    {recentExpenses.map(expense => {
+                                        const center = costCenters.find(c => c.id === expense.cost_center_id) || { color: '#ccc', name: '-' };
+                                        return (
+                                            <tr key={expense.id} className="hover:bg-gray-50 transition-colors">
+                                                <td className="px-6 py-4 whitespace-nowrap">{formatDate(expense.date)}</td>
+                                                <td className="px-6 py-4 font-medium text-gray-900">{expense.description}</td>
+                                                <td className="px-6 py-4">
+                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" style={{backgroundColor: center.color + '20', color: center.color}}>
+                                                        {center.name}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 text-xs">{expense.user_email.split('@')[0]}</td>
+                                                <td className="px-6 py-4 text-right font-bold text-gray-800">
+                                                    {formatMoney(expense.amount)}
+                                                    {expense.installment_total > 1 && (
+                                                        <span className="ml-2 text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full">
+                                                            {expense.installment_current}/{expense.installment_total}
+                                                        </span>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        )
+                                    })}
+                                </tbody>
+                            </table>
+                             {recentExpenses.length === 0 && <p className="text-center py-8 text-gray-400">Nenhum registro encontrado.</p>}
+                        </div>
+
+                        {/* Mobile Card View */}
+                        <div className="md:hidden space-y-3">
+                            {recentExpenses.length === 0 && <p className="text-center py-8 text-gray-400">Nenhum registro.</p>}
+                            {recentExpenses.map(expense => {
+                                const center = costCenters.find(c => c.id === expense.cost_center_id) || { color: '#ccc', name: 'Desconhecido' };
+                                return (
+                                    <div key={expense.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between relative overflow-hidden">
+                                        <div className="absolute left-0 top-0 bottom-0 w-1.5" style={{backgroundColor: center.color}}></div>
+                                        <div className="flex-1 min-w-0 pl-3">
+                                            <p className="font-bold text-gray-800 truncate">{expense.description}</p>
+                                            <div className="flex text-xs text-gray-500 gap-2 mt-1">
+                                                <span>{formatDate(expense.date)}</span>
+                                                <span>•</span>
+                                                <span className="truncate max-w-[100px]">{center.name}</span>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="font-bold text-gray-800 text-lg">{formatMoney(expense.amount)}</p>
+                                            {expense.installment_total > 1 && (
+                                                <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">
+                                                    {expense.installment_current}/{expense.installment_total}
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
-                                    <div className="text-right">
-                                        <p className="font-bold text-gray-800">{formatMoney(expense.amount)}</p>
-                                        {expense.installment_total > 1 && (
-                                            <span className="text-[10px] bg-blue-100 text-blue-700 px-1 rounded">
-                                                {expense.installment_current}/{expense.installment_total}
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-                            );
-                        })}
+                                );
+                            })}
+                        </div>
                     </div>
                 </div>
             );
@@ -483,34 +678,67 @@
             };
 
             return (
-                <div className="pb-20 space-y-4">
-                    <h2 className="text-xl font-bold text-gray-800">Centros de Custo</h2>
+                <div className="pb-20 space-y-6 fade-in">
+                    <h2 className="text-xl font-bold text-gray-800">Gerenciar Centros de Custo</h2>
                     
-                    <div className="bg-white p-5 rounded-xl shadow-md">
-                        <h3 className="text-sm font-bold text-gray-500 mb-3 uppercase">{editing ? 'Editar Centro' : 'Novo Centro'}</h3>
-                        <form onSubmit={handleSave} className="grid gap-3">
-                            <input placeholder="Nome (ex: Mercado)" required value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="border rounded p-2"/>
-                            <div className="flex gap-2">
-                                <input placeholder="Orçamento" type="number" required value={form.budget} onChange={e => setForm({...form, budget: e.target.value})} className="border rounded p-2 flex-1"/>
-                                <input type="color" value={form.color} onChange={e => setForm({...form, color: e.target.value})} className="h-10 w-12 border rounded p-1 cursor-pointer"/>
-                            </div>
-                            <div className="flex gap-2">
-                                <button className="bg-primary text-white flex-1 py-2 rounded font-medium">{editing ? 'Atualizar' : 'Criar'}</button>
-                                {editing && <button type="button" onClick={() => { setEditing(null); setForm({ name: '', budget: '', color: '#3b82f6' }); }} className="bg-gray-200 text-gray-700 px-4 rounded">X</button>}
-                            </div>
-                        </form>
-                    </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        {/* Form Section */}
+                        <div className="lg:col-span-1">
+                            <Card className="p-6 sticky top-6">
+                                <h3 className="text-sm font-bold text-gray-500 mb-4 uppercase tracking-wide border-b pb-2">
+                                    {editing ? 'Editar Categoria' : 'Nova Categoria'}
+                                </h3>
+                                <form onSubmit={handleSave} className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
+                                        <input placeholder="Ex: Mercado" required value={form.name} onChange={e => setForm({...form, name: e.target.value})} 
+                                            className="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-accent focus:border-transparent outline-none"/>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Orçamento Mensal</label>
+                                        <div className="relative">
+                                            <span className="absolute left-3 top-2.5 text-gray-400 text-sm">R$</span>
+                                            <input type="number" required value={form.budget} onChange={e => setForm({...form, budget: e.target.value})} 
+                                                className="w-full border rounded-lg p-2.5 pl-9 text-sm focus:ring-2 focus:ring-accent focus:border-transparent outline-none"/>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Cor da Etiqueta</label>
+                                        <div className="flex gap-2 items-center">
+                                            <input type="color" value={form.color} onChange={e => setForm({...form, color: e.target.value})} 
+                                                className="h-10 w-14 border rounded cursor-pointer p-1"/>
+                                            <span className="text-sm text-gray-500">{form.color}</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-3 pt-2">
+                                        <Button className="flex-1">{editing ? 'Salvar Alterações' : 'Criar Centro'}</Button>
+                                        {editing && <Button type="button" variant="secondary" onClick={() => { setEditing(null); setForm({ name: '', budget: '', color: '#3b82f6' }); }}>Cancelar</Button>}
+                                    </div>
+                                </form>
+                            </Card>
+                        </div>
 
-                    <div className="grid gap-3">
-                        {costCenters.map(cc => (
-                            <div key={cc.id} onClick={() => startEdit(cc)} className="bg-white p-4 rounded-lg shadow-sm flex justify-between items-center cursor-pointer hover:bg-gray-50 border-l-4" style={{borderLeftColor: cc.color}}>
-                                <div>
-                                    <p className="font-bold text-gray-800">{cc.name}</p>
-                                    <p className="text-sm text-gray-500">Orçamento: {formatMoney(cc.budget)}</p>
-                                </div>
-                                <i data-lucide="settings" className="w-4 h-4 text-gray-400"></i>
-                            </div>
-                        ))}
+                        {/* List Grid Section */}
+                        <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {costCenters.map(cc => (
+                                <Card key={cc.id} className="p-4 hover:shadow-md transition-shadow cursor-pointer relative overflow-hidden group border-l-4" style={{borderLeftColor: cc.color}}>
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <h4 className="font-bold text-gray-800 text-lg">{cc.name}</h4>
+                                            <p className="text-sm text-gray-500 mt-1">Orçamento: <span className="font-semibold text-gray-700">{formatMoney(cc.budget)}</span></p>
+                                        </div>
+                                        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button onClick={(e) => {e.stopPropagation(); startEdit(cc)}} className="p-2 bg-gray-100 hover:bg-white text-blue-600 rounded-full shadow-sm">
+                                                <i data-lucide="edit-2" className="w-4 h-4"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div className="absolute top-2 right-2 opacity-10 pointer-events-none">
+                                        <i data-lucide="tag" className="w-12 h-12"></i>
+                                    </div>
+                                </Card>
+                            ))}
+                        </div>
                     </div>
                 </div>
             );
@@ -543,13 +771,10 @@
             const generateExpenses = async () => {
                 const today = new Date();
                 const monthStr = today.toISOString().slice(0, 7); 
-                
                 const confirmed = confirm(`Gerar despesas fixas para este mês (${monthStr})?`);
                 if (!confirmed) return;
-
                 const updates = recurrences.filter(r => r.active).map(r => {
                     const chargeDate = new Date(today.getFullYear(), today.getMonth(), r.day_of_charge || 10);
-                    
                     return supabase.from('expenses').insert({
                         description: `[Fixo] ${r.description}`,
                         amount: r.amount,
@@ -560,48 +785,67 @@
                         is_recurrence: true
                     });
                 });
-
                 await Promise.all(updates);
                 alert("Despesas geradas com sucesso!");
                 onUpdate(); 
             };
 
             return (
-                <div className="pb-20 space-y-4">
+                <div className="pb-20 space-y-6 fade-in">
                     <div className="flex justify-between items-center">
-                        <h2 className="text-xl font-bold text-gray-800">Contas Fixas</h2>
-                        <button onClick={generateExpenses} className="text-xs bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full font-bold">
-                            Lançar no Mês
-                        </button>
+                        <h2 className="text-xl font-bold text-gray-800">Contas Fixas Mensais</h2>
+                        <Button onClick={generateExpenses} variant="accent" className="text-xs px-3 py-1">
+                            <i data-lucide="play-circle" className="w-4 h-4"></i> Lançar no Mês Atual
+                        </Button>
                     </div>
 
-                    <form onSubmit={handleAdd} className="bg-white p-4 rounded-xl shadow-sm space-y-3">
-                        <input placeholder="Descrição (Ex: Aluguel)" required value={form.description} onChange={e => setForm({...form, description: e.target.value})} className="w-full border rounded p-2 text-sm"/>
-                        <div className="flex gap-2">
-                            <input placeholder="Valor" type="number" required value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} className="flex-1 border rounded p-2 text-sm"/>
-                            <input placeholder="Dia" type="number" max="31" min="1" required value={form.day_of_charge} onChange={e => setForm({...form, day_of_charge: e.target.value})} className="w-16 border rounded p-2 text-sm"/>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div className="lg:col-span-1">
+                             <Card className="p-6 sticky top-6">
+                                <h3 className="text-sm font-bold text-gray-500 mb-4 uppercase tracking-wide border-b pb-2">Nova Recorrência</h3>
+                                <form onSubmit={handleAdd} className="space-y-4">
+                                    <input placeholder="Descrição (Ex: Aluguel)" required value={form.description} onChange={e => setForm({...form, description: e.target.value})} 
+                                        className="w-full border rounded-lg p-2.5 text-sm"/>
+                                    <div className="flex gap-3">
+                                        <input placeholder="Valor" type="number" required value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} 
+                                            className="flex-1 border rounded-lg p-2.5 text-sm"/>
+                                        <input placeholder="Dia" type="number" max="31" min="1" required value={form.day_of_charge} onChange={e => setForm({...form, day_of_charge: e.target.value})} 
+                                            className="w-20 border rounded-lg p-2.5 text-sm" title="Dia do vencimento"/>
+                                    </div>
+                                    <select required value={form.cost_center_id} onChange={e => setForm({...form, cost_center_id: e.target.value})} 
+                                        className="w-full border rounded-lg p-2.5 text-sm bg-white">
+                                        <option value="">Centro de Custo...</option>
+                                        {costCenters.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                    </select>
+                                    <Button className="w-full">Adicionar</Button>
+                                </form>
+                            </Card>
                         </div>
-                        <select required value={form.cost_center_id} onChange={e => setForm({...form, cost_center_id: e.target.value})} className="w-full border rounded p-2 text-sm bg-white">
-                            <option value="">Centro de Custo...</option>
-                            {costCenters.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                        </select>
-                        <button className="w-full bg-secondary text-white py-2 rounded text-sm font-medium">Adicionar Recorrência</button>
-                    </form>
 
-                    <div className="space-y-2">
-                        {recurrences.map(r => (
-                            <div key={r.id} className={`bg-white p-3 rounded-lg shadow-sm flex items-center justify-between ${!r.active && 'opacity-50'}`}>
-                                <div>
-                                    <p className="font-bold text-gray-800">{r.description}</p>
-                                    <p className="text-xs text-gray-500">Dia {r.day_of_charge} • {formatMoney(r.amount)}</p>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <button onClick={() => toggleActive(r.id, r.active)} className={`w-10 h-6 rounded-full flex items-center p-1 transition-colors ${r.active ? 'bg-green-500' : 'bg-gray-300'}`}>
-                                        <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${r.active ? 'translate-x-4' : ''}`}></div>
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
+                        <div className="lg:col-span-2 space-y-3">
+                            {recurrences.map(r => (
+                                <Card key={r.id} className={`p-4 flex items-center justify-between transition-all ${!r.active && 'opacity-60 bg-gray-50'}`}>
+                                    <div className="flex items-center gap-4">
+                                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold ${r.active ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-200 text-gray-400'}`}>
+                                            {r.day_of_charge}
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-gray-800">{r.description}</p>
+                                            <p className="text-sm text-gray-500">{formatMoney(r.amount)}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className={`text-xs font-bold uppercase mr-2 ${r.active ? 'text-green-600' : 'text-gray-400'}`}>
+                                            {r.active ? 'Ativo' : 'Pausado'}
+                                        </span>
+                                        <button onClick={() => toggleActive(r.id, r.active)} 
+                                            className={`w-12 h-6 rounded-full flex items-center p-1 transition-colors duration-300 ${r.active ? 'bg-green-500' : 'bg-gray-300'}`}>
+                                            <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${r.active ? 'translate-x-6' : ''}`}></div>
+                                        </button>
+                                    </div>
+                                </Card>
+                            ))}
+                        </div>
                     </div>
                 </div>
             );
@@ -617,23 +861,20 @@
 
             useEffect(() => {
                 if (!supabase) return;
-
                 supabase.auth.getSession().then(({ data: { session } }) => {
                     setSession(session);
                     if (session) loadData();
                 });
-
                 const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
                     setSession(session);
                     if (session) loadData();
                 });
-
                 return () => subscription.unsubscribe();
             }, []);
 
             useEffect(() => {
                 if (window.lucide) window.lucide.createIcons();
-            }, [view, session, expenses]);
+            }, [view, session, expenses, costCenters]);
 
             const loadData = async () => {
                 if (!supabase) return;
@@ -651,47 +892,58 @@
             };
 
             if (!supabase) return <SetupScreen error={initError} />;
-
             if (!session) return <LoginScreen />;
 
             return (
-                <div className="max-w-md mx-auto min-h-screen bg-slate-50 relative shadow-2xl overflow-hidden">
-                    <div className="h-full overflow-y-auto no-scrollbar pt-4 px-4">
-                        {view === 'dashboard' && <Dashboard user={session.user} costCenters={costCenters} expenses={expenses} currentMonthRef={currentMonthRef} onChangeMonth={setCurrentMonthRef} />}
-                        {view === 'expenses' && <ExpensesScreen user={session.user} costCenters={costCenters} expenses={expenses} onAddExpense={loadData} />}
-                        {view === 'costcenters' && <CostCentersScreen costCenters={costCenters} onUpdate={loadData} />}
-                        {view === 'recurrence' && <RecurrenceScreen user={session.user} costCenters={costCenters} onUpdate={loadData} />}
-                    </div>
+                <div className="min-h-screen bg-slate-50 flex">
+                    {/* Desktop Sidebar */}
+                    <Sidebar view={view} setView={setView} handleLogout={handleLogout} user={session.user} />
 
-                    <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-3 flex justify-between items-center z-50">
-                        <button onClick={() => setView('dashboard')} className={`flex flex-col items-center ${view === 'dashboard' ? 'text-primary' : 'text-gray-400'}`}>
-                            <i data-lucide="pie-chart" className="w-6 h-6"></i>
-                            <span className="text-[10px] mt-1">Visão</span>
-                        </button>
-                        <button onClick={() => setView('expenses')} className={`flex flex-col items-center ${view === 'expenses' ? 'text-primary' : 'text-gray-400'}`}>
-                            <i data-lucide="list" className="w-6 h-6"></i>
-                            <span className="text-[10px] mt-1">Gastos</span>
-                        </button>
-                        
-                        <div className="relative -top-5">
-                            <button onClick={() => setView('expenses')} className="bg-primary text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg transform active:scale-95 transition">
-                                <i data-lucide="plus" className="w-8 h-8"></i>
-                            </button>
+                    {/* Main Content Area */}
+                    <main className="flex-1 flex flex-col h-screen overflow-hidden md:pl-64 transition-all duration-300">
+                        {/* Mobile Header (Hidden on Desktop) */}
+                        <header className="md:hidden bg-white p-4 shadow-sm flex justify-between items-center z-20">
+                             <h1 className="text-lg font-bold text-primary flex items-center gap-2">
+                                <i data-lucide="wallet" className="text-accent"></i> Finanças
+                            </h1>
+                            <button onClick={handleLogout} className="text-gray-500"><i data-lucide="log-out"></i></button>
+                        </header>
+
+                        {/* Scrollable Content */}
+                        <div className="flex-1 overflow-y-auto p-4 md:p-8 relative">
+                             <div className="max-w-7xl mx-auto pb-20 md:pb-0">
+                                {view === 'dashboard' && <Dashboard user={session.user} costCenters={costCenters} expenses={expenses} currentMonthRef={currentMonthRef} onChangeMonth={setCurrentMonthRef} />}
+                                {view === 'expenses' && <ExpensesScreen user={session.user} costCenters={costCenters} expenses={expenses} onAddExpense={loadData} />}
+                                {view === 'costcenters' && <CostCentersScreen costCenters={costCenters} onUpdate={loadData} />}
+                                {view === 'recurrence' && <RecurrenceScreen user={session.user} costCenters={costCenters} onUpdate={loadData} />}
+                            </div>
                         </div>
 
-                        <button onClick={() => setView('recurrence')} className={`flex flex-col items-center ${view === 'recurrence' ? 'text-primary' : 'text-gray-400'}`}>
-                            <i data-lucide="calendar" className="w-6 h-6"></i>
-                            <span className="text-[10px] mt-1">Fixas</span>
-                        </button>
-                        <button onClick={() => setView('costcenters')} className={`flex flex-col items-center ${view === 'costcenters' ? 'text-primary' : 'text-gray-400'}`}>
-                            <i data-lucide="wallet" className="w-6 h-6"></i>
-                            <span className="text-[10px] mt-1">Centros</span>
-                        </button>
-                    </div>
-
-                    <button onClick={handleLogout} className="absolute top-4 right-4 text-gray-400 hover:text-red-500">
-                        <i data-lucide="log-out" className="w-5 h-5"></i>
-                    </button>
+                        {/* Mobile Bottom Navigation (Hidden on Desktop) */}
+                        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-3 flex justify-between items-center z-50">
+                            <button onClick={() => setView('dashboard')} className={`flex flex-col items-center ${view === 'dashboard' ? 'text-primary' : 'text-gray-400'}`}>
+                                <i data-lucide="pie-chart" className="w-6 h-6"></i>
+                                <span className="text-[10px] mt-1">Visão</span>
+                            </button>
+                            <button onClick={() => setView('expenses')} className={`flex flex-col items-center ${view === 'expenses' ? 'text-primary' : 'text-gray-400'}`}>
+                                <i data-lucide="list" className="w-6 h-6"></i>
+                                <span className="text-[10px] mt-1">Gastos</span>
+                            </button>
+                            <div className="relative -top-5">
+                                <button onClick={() => setView('expenses')} className="bg-primary text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg transform active:scale-95 transition">
+                                    <i data-lucide="plus" className="w-8 h-8"></i>
+                                </button>
+                            </div>
+                            <button onClick={() => setView('recurrence')} className={`flex flex-col items-center ${view === 'recurrence' ? 'text-primary' : 'text-gray-400'}`}>
+                                <i data-lucide="calendar" className="w-6 h-6"></i>
+                                <span className="text-[10px] mt-1">Fixas</span>
+                            </button>
+                            <button onClick={() => setView('costcenters')} className={`flex flex-col items-center ${view === 'costcenters' ? 'text-primary' : 'text-gray-400'}`}>
+                                <i data-lucide="wallet" className="w-6 h-6"></i>
+                                <span className="text-[10px] mt-1">Centros</span>
+                            </button>
+                        </nav>
+                    </main>
                 </div>
             );
         };
